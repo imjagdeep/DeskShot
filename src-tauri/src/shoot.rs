@@ -183,12 +183,14 @@ pub fn overlay_info(app: &AppHandle, index: usize) -> Result<OverlayInfo, String
     })
 }
 
-pub fn overlay_png(app: &AppHandle, index: usize) -> Result<Vec<u8>, String> {
+/// The frozen picture for the overlay to show, as an uncompressed BMP: a 4K
+/// PNG took most of a second to encode, a bitmap costs almost nothing.
+pub fn overlay_bmp(app: &AppHandle, index: usize) -> Result<Vec<u8>, String> {
     let state = app.state::<AppState>();
     let st = state.lock();
     let f = st.frozen.as_ref().ok_or("no capture in progress")?;
     let shot = f.shots.get(index).ok_or("unknown screen")?;
-    history::encode_png(&shot.image)
+    history::encode_bmp(&shot.image)
 }
 
 /// The overlay is done: a rectangle in that monitor's picture, or None to cancel.

@@ -39,7 +39,8 @@ export function Overlay() {
     (async () => {
       try {
         const [i, png] = await Promise.all([api.overlayInfo(), api.overlayImage()]);
-        made = URL.createObjectURL(new Blob([png], { type: "image/png" }));
+        // (an uncompressed bitmap: nothing to encode, so the overlay comes up fast)
+        made = URL.createObjectURL(new Blob([png], { type: "image/bmp" }));
         setInfo(i);
         setUrl(made);
       } catch (e) {
@@ -136,7 +137,18 @@ export function Overlay() {
           void w.show().then(() => w.setFocus());
         }}
       />
-      <div className={box ? "ov-dim with-hole" : "ov-dim"} style={box ?? undefined} />
+      {box ? (
+        <>
+          {/* Darken everything around the selection: four plain blocks. */}
+          <div className="ov-dim" style={{ left: 0, top: 0, right: 0, height: box.top }} />
+          <div className="ov-dim" style={{ left: 0, top: box.top + box.height, right: 0, bottom: 0 }} />
+          <div className="ov-dim" style={{ left: 0, top: box.top, width: box.left, height: box.height }} />
+          <div className="ov-dim" style={{ left: box.left + box.width, top: box.top, right: 0, height: box.height }} />
+          <div className="ov-frame" style={box} />
+        </>
+      ) : (
+        <div className="ov-dim" style={{ inset: 0 }} />
+      )}
       {box && shown && (
         <div className="ov-size" style={{ left: box.left, top: Math.max(4, box.top - 28) }}>
           {hover && !dragRect ? `${hover.app || hover.title} · ` : ""}

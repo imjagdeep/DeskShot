@@ -69,8 +69,8 @@
 .overlay-window, .overlay-window body, .overlay-window #root { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .ov-root { position: fixed; inset: 0; cursor: crosshair; user-select: none; overflow: hidden; }
 .ov-shot { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.ov-dim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.38); pointer-events: none; }
-.ov-dim.with-hole { inset: auto; background: transparent; box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.38); outline: 1.5px solid #fff; outline-offset: 0; }
+.ov-dim { position: absolute; background: rgba(0, 0, 0, 0.4); pointer-events: none; }
+.ov-frame { position: absolute; box-sizing: border-box; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); pointer-events: none; }
 .ov-size, .ov-hint, .ov-mag div {
   position: absolute;
   padding: 4px 9px;

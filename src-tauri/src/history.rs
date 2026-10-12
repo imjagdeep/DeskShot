@@ -72,6 +72,15 @@ pub fn encode_png(img: &RgbaImage) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
+/// Uncompressed 32-bit BMP (for showing a picture straight away).
+pub fn encode_bmp(img: &RgbaImage) -> Result<Vec<u8>, String> {
+    let mut out = Vec::with_capacity(img.as_raw().len() + 256);
+    image::codecs::bmp::BmpEncoder::new(&mut out)
+        .write_image(img.as_raw(), img.width(), img.height(), image::ExtendedColorType::Rgba8)
+        .map_err(|e| format!("cannot prepare the picture: {e}"))?;
+    Ok(out)
+}
+
 pub fn encode(img: &RgbaImage, format: Format, quality: u8) -> Result<Vec<u8>, String> {
     match format {
         Format::Png => encode_png(img),
@@ -189,5 +198,6 @@ mod tests {
         let img = RgbaImage::from_pixel(8, 8, image::Rgba([10, 20, 30, 255]));
         assert_eq!(&encode(&img, Format::Png, 90).unwrap()[1..4], b"PNG");
         assert_eq!(&encode(&img, Format::Jpg, 80).unwrap()[..2], &[0xFF, 0xD8]);
+        assert_eq!(&encode_bmp(&img).unwrap()[..2], b"BM");
     }
 }

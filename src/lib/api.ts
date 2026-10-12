@@ -71,7 +71,7 @@ export const api = {
   startCapture: (mode: CaptureMode, delay = 0) => invoke<void>("start_capture", { mode, delay }),
 
   overlayInfo: () => invoke<OverlayInfo>("overlay_info"),
-  /** This overlay's frozen screen as PNG bytes. */
+  /** This overlay's frozen screen as BMP bytes (shown only; the crop uses the original). */
   overlayImage: async () => new Uint8Array(await invoke<ArrayBuffer>("overlay_image")),
   /** A rectangle in the frozen picture's pixels, or null to cancel. */
   overlayFinish: (rect: Rect | null) => invoke<void>("overlay_finish", { rect }),
