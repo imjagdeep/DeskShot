@@ -1,0 +1,91 @@
+/* DeskShot's own screens: capture overlay, Capture and History pages. */
+
+.check-row { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 4px; cursor: pointer; }
+.check-row input { margin-top: 3px; }
+.block { display: block; }
+.setting-line { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 12px 0 4px; }
+.setting-line input[type="range"] { width: 220px; }
+.page-wide { max-width: 1200px; }
+.section-title { font-size: 13px; font-weight: 600; margin: 22px 0 8px; color: var(--text-2); }
+.search-box { display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; height: 28px; border-radius: 7px; background: var(--control); box-shadow: var(--shadow-sm); color: var(--text-3); }
+.search-box input { border: 0; box-shadow: none; background: transparent; height: 26px; padding: 0; width: 240px; }
+.search-box input:focus { box-shadow: none; }
+
+/* ---------- Capture page ---------- */
+.capture-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.capture-tile {
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 18px 16px;
+  border-radius: 12px;
+  text-align: left;
+  white-space: normal;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.capture-tile svg { margin-bottom: 8px; color: var(--text-2); }
+.capture-tile strong { font-size: 14px; }
+.capture-tile kbd { position: absolute; top: 14px; right: 14px; }
+.capture-tile:hover { transform: translateY(-1px); filter: none; box-shadow: var(--shadow-sm), 0 8px 22px rgba(0, 0, 0, 0.08); }
+.capture-tile:active { transform: translateY(0) scale(0.99); }
+.delay-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 14px 2px 4px; color: var(--text-3); }
+.segmented.small button { height: 22px; padding: 0 10px; font-size: 12px; }
+
+.shot-view { border-radius: 12px; background: var(--group); box-shadow: var(--shadow-sm); overflow: hidden; }
+.shot-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  max-height: 58vh;
+  padding: 18px;
+  /* a soft checkerboard so transparent and white edges are visible */
+  background:
+    repeating-conic-gradient(var(--hover) 0% 25%, transparent 0% 50%) 0 0 / 18px 18px,
+    var(--window);
+}
+.shot-stage img { max-width: 100%; max-height: calc(58vh - 36px); object-fit: contain; border-radius: 4px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); }
+.shot-loading { width: 180px; height: 110px; border-radius: 8px; background: var(--hover); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.shot-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-top: 0.5px solid var(--sep); }
+.shot-meta { display: flex; flex-direction: column; min-width: 0; }
+.shot-meta .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ---------- thumbnails ---------- */
+.recent-strip { display: flex; gap: 10px; overflow-x: auto; padding: 12px 2px 6px; }
+.thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 16px; }
+.thumb { height: auto; display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 10px; background: none; box-shadow: none; text-align: left; flex: 0 0 150px; }
+.thumb:hover { background: var(--hover); filter: none; }
+.thumb.active { background: var(--selected); }
+.thumb-pic { display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 10; border-radius: 7px; background: var(--hover); overflow: hidden; }
+.thumb-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.thumb-cap { font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- capture overlay (one per monitor) ---------- */
+.overlay-window, .overlay-window body, .overlay-window #root { margin: 0; height: 100%; overflow: hidden; background: #000; }
+.ov-root { position: fixed; inset: 0; cursor: crosshair; user-select: none; overflow: hidden; }
+.ov-shot { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ov-dim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.38); pointer-events: none; }
+.ov-dim.with-hole { inset: auto; background: transparent; box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.38); outline: 1.5px solid #fff; outline-offset: 0; }
+.ov-size, .ov-hint, .ov-mag div {
+  position: absolute;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(20, 20, 22, 0.86);
+  color: #fff;
+  font: 500 12px -apple-system, "Segoe UI", system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ov-hint { top: 18px; left: 50%; transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; font-size: 13px; }
+.ov-cross-x, .ov-cross-y { position: absolute; pointer-events: none; background: rgba(255, 255, 255, 0.55); mix-blend-mode: difference; }
+.ov-cross-x { left: 0; right: 0; height: 1px; }
+.ov-cross-y { top: 0; bottom: 0; width: 1px; }
+.ov-mag { position: absolute; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ov-mag canvas { border-radius: 10px; border: 2px solid #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); image-rendering: pixelated; }
+.ov-mag div { position: static; }
+.ov-error { cursor: default; background: #111; }

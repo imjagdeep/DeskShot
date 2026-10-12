@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay",
+  "description": "Capture overlays: only show and focus themselves; everything else goes through DeskShot's own commands",
+  "windows": [
+    "overlay-*"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-show",
+    "core:window:allow-set-focus"
+  ]
+}
