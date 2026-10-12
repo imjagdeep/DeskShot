@@ -145,7 +145,9 @@ fn list_windows() -> Vec<WinInfo> {
 #[cfg(windows)]
 fn click_through(w: &xcap::Window) -> bool {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TRANSPARENT};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TRANSPARENT,
+    };
     let Ok(id) = w.id() else {
         return false;
     };
