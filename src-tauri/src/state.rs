@@ -1,8 +1,10 @@
 //! What the commands share: folders, settings and the capture in progress.
 
 use crate::capture::Frozen;
+use crate::pin::PinInfo;
 use crate::settings::Settings;
 use crate::shoot::Mode;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
@@ -15,6 +17,8 @@ pub struct Inner {
     /// The frozen screens while the overlays are up.
     pub frozen: Option<Frozen>,
     pub mode: Mode,
+    /// Open pin windows and the capture each shows.
+    pub pins: HashMap<String, PinInfo>,
 }
 
 pub struct AppState(Mutex<Inner>);

@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "pin",
+  "description": "Pinned captures: move, close and focus themselves; resizing and copying go through DeskShot's own commands",
+  "windows": [
+    "pin-*"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-close",
+    "core:window:allow-set-focus",
+    "dialog:allow-save"
+  ]
+}

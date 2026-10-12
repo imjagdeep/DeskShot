@@ -6,6 +6,7 @@ mod capture;
 mod clipboard;
 mod desklab;
 mod history;
+mod pin;
 mod printscreen;
 mod settings;
 mod shoot;
@@ -172,6 +173,23 @@ async fn history_image(state: State<'_, AppState>, id: String) -> CmdResult<Resp
 #[tauri::command]
 fn history_set_text(state: State<'_, AppState>, id: String, text: String) -> CmdResult<()> {
     history::set_text(&state.lock().data_dir, &id, &text)
+}
+
+/// Float a capture on top of every other window.
+#[tauri::command]
+fn pin_capture(app: AppHandle, id: String) -> CmdResult<()> {
+    pin::open(&app, &id)
+}
+
+/// Which capture this pin window shows.
+#[tauri::command]
+fn pin_info(app: AppHandle, window: WebviewWindow) -> CmdResult<pin::PinInfo> {
+    pin::info(&app, window.label())
+}
+
+#[tauri::command]
+fn pin_resize(app: AppHandle, window: WebviewWindow, width: f64) -> CmdResult<()> {
+    pin::resize(&app, window.label(), width)
 }
 
 #[tauri::command]
@@ -391,7 +409,7 @@ pub fn run() {
                     tauri_plugin_window_state::StateFlags::all()
                         - tauri_plugin_window_state::StateFlags::VISIBLE,
                 )
-                .with_filter(|label| !shoot::is_overlay(label))
+                .with_filter(|label| !shoot::is_overlay(label) && !pin::is_pin(label))
                 .build(),
         )
         .plugin(
@@ -435,6 +453,7 @@ pub fn run() {
                 settings,
                 frozen: None,
                 mode: Mode::Area,
+                pins: Default::default(),
             }));
             tray::build(app.handle())?;
 
@@ -455,6 +474,17 @@ pub fn run() {
                     tray::set_in_dock(window.app_handle(), false);
                 }
             }
+            // A closed pin forgets its capture.
+            if let WindowEvent::Destroyed = event {
+                if pin::is_pin(window.label()) {
+                    window
+                        .app_handle()
+                        .state::<AppState>()
+                        .lock()
+                        .pins
+                        .remove(window.label());
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
@@ -468,6 +498,9 @@ pub fn run() {
             history_image,
             history_delete,
             history_set_text,
+            pin_capture,
+            pin_info,
+            pin_resize,
             copy_png,
             save_edit,
             save_png,

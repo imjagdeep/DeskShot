@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { api, type HistoryEntry } from "../lib/api";
 import { deleteCapture, fileStamp, picturePng, pictureUrl, setCaptureText, when } from "../lib/captures";
 import { toast, toastError } from "../lib/store";
-import { CopyIcon, EditIcon, FolderIcon, SaveIcon, TextIcon, TrashIcon } from "./Icons";
+import { CopyIcon, EditIcon, FolderIcon, PinIcon, SaveIcon, TextIcon, TrashIcon } from "./Icons";
 
 export function CaptureView({ entry, onDeleted, onEdit }: { entry: HistoryEntry; onDeleted: () => void; onEdit: (e: HistoryEntry) => void }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -108,6 +108,9 @@ export function CaptureView({ entry, onDeleted, onEdit }: { entry: HistoryEntry;
           </button>
           <button className="with-icon" onClick={() => void saveAs()}>
             <SaveIcon size={15} /> Save as…
+          </button>
+          <button className="icon" title="Pin on top of other windows" onClick={() => void api.pinCapture(entry.id).catch(toastError)}>
+            <PinIcon size={16} />
           </button>
           {entry.saved && (
             <button className="icon" title="Show in folder" onClick={() => void api.revealFile(entry.saved ?? "").catch(toastError)}>

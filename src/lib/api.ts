@@ -82,6 +82,12 @@ export const api = {
   historyImage: async (id: string) => new Uint8Array(await invoke<ArrayBuffer>("history_image", { id })),
   historyDelete: (id: string) => invoke<void>("history_delete", { id }),
   historySetText: (id: string, text: string) => invoke<void>("history_set_text", { id, text }),
+  /** Float a capture on top of every other window. */
+  pinCapture: (id: string) => invoke<void>("pin_capture", { id }),
+  /** (in a pin window) which capture it shows */
+  pinInfo: () => invoke<{ id: string; width: number; height: number }>("pin_info"),
+  /** (in a pin window) new width in screen points; the height follows */
+  pinResize: (width: number) => invoke<void>("pin_resize", { width }),
   /** Keep an edited picture (PNG bytes) as a new capture. */
   saveEdit: (png: Uint8Array) => invoke<HistoryEntry>("save_edit", png),
   /** PNG bytes onto the clipboard as a picture. */
