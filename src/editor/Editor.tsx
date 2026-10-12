@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Arrow, Circle, Ellipse, Group, Image as KImage, Layer, Line, Rect, Stage, Text, Transformer } from "react-konva";
 import type { HistoryEntry } from "../lib/api";
 import { pictureUrl } from "../lib/captures";
-import { toastError } from "../lib/store";
+import { describeFindings, findSensitive } from "../lib/sensitive";
+import { toast, toastError } from "../lib/store";
 import {
   boxFrom,
   clampBox,
@@ -192,6 +193,7 @@ export function Editor({
   const [cropDraft, setCropDraft] = useState<Box | null>(null);
   const [edit, setEdit] = useState<Edit | null>(null);
   const [busy, setBusy] = useState(false);
+  const [finding, setFinding] = useState(false);
   const [view, setView] = useState({ w: 800, h: 500 });
   const wrap = useRef<HTMLDivElement>(null);
   const stage = useRef<Konva.Stage>(null);
@@ -334,6 +336,28 @@ export function Editor({
     };
   }, [edit, remove]);
 
+  // Read the picture and black out emails, phone numbers, IPs and card
+  // numbers in one step (one Undo brings them all back).
+  const findPrivate = async () => {
+    if (!img) return;
+    setFinding(true);
+    try {
+      const { readText } = await import("../lib/ocr");
+      const found = findSensitive((await readText(img)).lines);
+      if (!found.length) {
+        toast("Found no email addresses, phone numbers, IP addresses or card numbers. Check names and other details yourself.");
+        return;
+      }
+      const boxes = found.map((f) => clampBox(f.box, img.width, img.height)).filter((b): b is Box => b !== null);
+      set({ ...doc, shapes: [...doc.shapes, ...boxes.map((box): Shape => ({ id: newId(), kind: "redact", box }))] });
+      toast(`Blacked out ${describeFindings(found)}. Check the picture; Undo brings them back.`);
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setFinding(false);
+    }
+  };
+
   // Render the drawing layer (picture + shapes) inside the crop at full size.
   const exportPng = async (how: "save" | "copy" | "file") => {
     const layer = drawLayer.current;
@@ -400,6 +424,9 @@ export function Editor({
               Uncrop
             </button>
           )}
+          <button onClick={() => void findPrivate()} disabled={finding} title="Black out emails, phone numbers, IP addresses and card numbers">
+            {finding ? "Reading…" : "Find private details"}
+          </button>
           <button onClick={onClose}>Close</button>
           <button disabled={busy} onClick={() => void exportPng("copy")}>
             Copy

@@ -16,6 +16,9 @@ pub struct Entry {
     pub height: u32,
     /// The copy saved into the user's folder, if any.
     pub saved: Option<PathBuf>,
+    /// Words read from the picture (filled in later by the window), for search.
+    #[serde(default)]
+    pub text: Option<String>,
 }
 
 fn dir(data: &Path) -> PathBuf {
@@ -137,6 +140,7 @@ pub fn add(
         width: img.width(),
         height: img.height(),
         saved,
+        text: None,
     };
     let mut all = list(data);
     all.insert(0, entry.clone());
@@ -150,6 +154,18 @@ pub fn add(
     all.truncate(limit);
     write_index(data, &all)?;
     Ok(entry)
+}
+
+/// Remember the words read from a capture.
+pub fn set_text(data: &Path, id: &str, text: &str) -> Result<(), String> {
+    png_path(data, id)?;
+    let mut all = list(data);
+    let Some(e) = all.iter_mut().find(|e| e.id == id) else {
+        return Err("unknown capture".into());
+    };
+    // Plenty for searching; keeps the index small.
+    e.text = Some(text.chars().take(4000).collect());
+    write_index(data, &all)
 }
 
 /// Forget a capture (the copy in the user's folder stays).
@@ -179,6 +195,9 @@ mod tests {
         let ids: Vec<_> = list(d.path()).into_iter().map(|e| e.id).collect();
         assert_eq!(ids, ["a3", "a2"]);
         assert!(!png_path(d.path(), "a1").unwrap().exists());
+        set_text(d.path(), "a2", "Invoice 42").unwrap();
+        assert_eq!(list(d.path())[1].text.as_deref(), Some("Invoice 42"));
+        assert!(set_text(d.path(), "zz", "x").is_err());
         remove(d.path(), "a3").unwrap();
         assert_eq!(list(d.path()).len(), 1);
     }

@@ -76,3 +76,47 @@ export function fileStamp(ms: number): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} at ${p(d.getHours())}.${p(d.getMinutes())}.${p(d.getSeconds())}`;
 }
+
+/** Remember the words read from a capture (store + History index). */
+export async function setCaptureText(id: string, text: string) {
+  await api.historySetText(id, text);
+  const list = listStore.get();
+  if (list) listStore.set(list.map((e) => (e.id === id ? { ...e, text } : e)));
+}
+
+// ---------- background reading for search ----------
+let indexing = false;
+// Tried this session, whatever happened, so nothing is read twice.
+const tried = new Set<string>();
+
+/** Read the text of captures that haven't been read yet, newest first, one
+ * at a time, so History can be searched by the words in the pictures. */
+export async function indexCaptures() {
+  if (indexing) return;
+  indexing = true;
+  try {
+    for (;;) {
+      const next = (listStore.get() ?? []).find((e) => e.text == null && !tried.has(e.id));
+      if (!next) break;
+      tried.add(next.id);
+      try {
+        const png = await api.historyImage(next.id);
+        const url = URL.createObjectURL(new Blob([png], { type: "image/png" }));
+        try {
+          const { readText, loadImage } = await import("./ocr");
+          const res = await readText(await loadImage(url));
+          await setCaptureText(next.id, res.text);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      } catch (e) {
+        // Skip it this session; one bad picture doesn't stop the rest.
+        console.warn("reading a capture failed", e);
+      }
+      // Leave the computer some breathing room between pictures.
+      await new Promise((r) => setTimeout(r, 400));
+    }
+  } finally {
+    indexing = false;
+  }
+}

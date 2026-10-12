@@ -33,6 +33,8 @@ export interface HistoryEntry {
   height: number;
   /** The copy saved in the user's folder, if any. */
   saved: string | null;
+  /** Words read from the picture (for search); missing until read. */
+  text?: string | null;
 }
 
 export type CaptureMode = "area" | "window" | "screen";
@@ -79,6 +81,7 @@ export const api = {
   historyList: () => invoke<HistoryEntry[]>("history_list"),
   historyImage: async (id: string) => new Uint8Array(await invoke<ArrayBuffer>("history_image", { id })),
   historyDelete: (id: string) => invoke<void>("history_delete", { id }),
+  historySetText: (id: string, text: string) => invoke<void>("history_set_text", { id, text }),
   /** Keep an edited picture (PNG bytes) as a new capture. */
   saveEdit: (png: Uint8Array) => invoke<HistoryEntry>("save_edit", png),
   /** PNG bytes onto the clipboard as a picture. */

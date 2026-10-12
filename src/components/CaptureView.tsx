@@ -1,14 +1,16 @@
 // One capture, big, with what you can do with it.
 
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { api, type HistoryEntry } from "../lib/api";
-import { deleteCapture, fileStamp, picturePng, pictureUrl, when } from "../lib/captures";
+import { deleteCapture, fileStamp, picturePng, pictureUrl, setCaptureText, when } from "../lib/captures";
 import { toast, toastError } from "../lib/store";
-import { CopyIcon, EditIcon, FolderIcon, SaveIcon, TrashIcon } from "./Icons";
+import { CopyIcon, EditIcon, FolderIcon, SaveIcon, TextIcon, TrashIcon } from "./Icons";
 
 export function CaptureView({ entry, onDeleted, onEdit }: { entry: HistoryEntry; onDeleted: () => void; onEdit: (e: HistoryEntry) => void }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
   useEffect(() => {
     let live = true;
     setUrl(null);
@@ -26,6 +28,30 @@ export function CaptureView({ entry, onDeleted, onEdit }: { entry: HistoryEntry;
       toast("Copied to the clipboard");
     } catch (e) {
       toastError(e);
+    }
+  };
+
+  // The words in the picture, read now if they haven't been yet.
+  const copyText = async () => {
+    setReading(true);
+    try {
+      let text = entry.text;
+      if (text == null) {
+        const { readText, loadImage } = await import("../lib/ocr");
+        text = (await readText(await loadImage(await pictureUrl(entry.id)))).text;
+        await setCaptureText(entry.id, text);
+      }
+      if (!text.trim()) {
+        toast("No text found in this picture");
+        return;
+      }
+      await writeText(text);
+      const words = text.split(/\s+/).filter(Boolean).length;
+      toast(`Copied the text (${words} word${words === 1 ? "" : "s"})`);
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setReading(false);
     }
   };
 
@@ -76,6 +102,9 @@ export function CaptureView({ entry, onDeleted, onEdit }: { entry: HistoryEntry;
           </button>
           <button className="with-icon" onClick={() => void copy()} title="Copy the picture">
             <CopyIcon size={15} /> Copy
+          </button>
+          <button className="with-icon" onClick={() => void copyText()} disabled={reading} title="Read the text in the picture and copy it">
+            <TextIcon size={15} /> {reading ? "Reading…" : "Copy text"}
           </button>
           <button className="with-icon" onClick={() => void saveAs()}>
             <SaveIcon size={15} /> Save as…

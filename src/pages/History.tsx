@@ -58,7 +58,7 @@ export function History({
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!list || !q) return list ?? [];
-    return list.filter((e) => `${when(e.created)} ${e.width}x${e.height} ${e.saved ?? ""}`.toLowerCase().includes(q));
+    return list.filter((e) => `${when(e.created)} ${e.width}x${e.height} ${e.saved ?? ""} ${e.text ?? ""}`.toLowerCase().includes(q));
   }, [list, query]);
   const current = shown.find((e) => e.id === selected) ?? null;
 
@@ -67,7 +67,7 @@ export function History({
       <PageHeader title="History" subtitle={list ? `${list.length} capture${list.length === 1 ? "" : "s"}, newest first` : undefined}>
         <label className="search-box">
           <SearchIcon size={14} />
-          <input value={query} placeholder="Search by date, size or file name" onChange={(e) => setQuery(e.target.value)} aria-label="Search history" />
+          <input value={query} placeholder="Search the words in your captures, or a date" onChange={(e) => setQuery(e.target.value)} aria-label="Search history" />
         </label>
       </PageHeader>
       {list && list.length === 0 && <Empty Icon={HistoryIcon} title="Nothing here yet" text="Every capture is kept here, newest first." />}

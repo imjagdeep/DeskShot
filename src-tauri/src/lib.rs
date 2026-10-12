@@ -170,6 +170,11 @@ async fn history_image(state: State<'_, AppState>, id: String) -> CmdResult<Resp
 }
 
 #[tauri::command]
+fn history_set_text(state: State<'_, AppState>, id: String, text: String) -> CmdResult<()> {
+    history::set_text(&state.lock().data_dir, &id, &text)
+}
+
+#[tauri::command]
 fn history_delete(state: State<'_, AppState>, id: String) -> CmdResult<()> {
     history::remove(&state.lock().data_dir, &id)
 }
@@ -462,6 +467,7 @@ pub fn run() {
             history_list,
             history_image,
             history_delete,
+            history_set_text,
             copy_png,
             save_edit,
             save_png,

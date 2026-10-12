@@ -8,7 +8,7 @@ import { Toasts } from "./components/Common";
 import { PAGES, Sidebar, type Page } from "./components/Sidebar";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { api, type HistoryEntry } from "./lib/api";
-import { fileStamp, refreshCaptures, useCaptures, watchCaptures } from "./lib/captures";
+import { fileStamp, indexCaptures, refreshCaptures, useCaptures, watchCaptures } from "./lib/captures";
 import { refreshAppInfo, toast, toastError, useAppInfo, useAutoUpdate, useTheme } from "./lib/store";
 import { checkAndDownload, dailyCheckDue } from "./lib/updates";
 import { Capture } from "./pages/Capture";
@@ -64,12 +64,14 @@ export default function App() {
 
   useEffect(() => {
     void refreshAppInfo();
-    void refreshCaptures();
+    // Then read the words in captures (for History search), quietly.
+    void refreshCaptures().then(() => window.setTimeout(() => void indexCaptures(), 8000));
     void applySavedZoom().catch(() => undefined);
     // A new capture: show it on the Capture page.
     const unNew = watchCaptures((e) => {
       setSelected(e.id);
       setPageRaw("capture");
+      window.setTimeout(() => void indexCaptures(), 1500);
     });
     const unErr = listen<string>("capture-error", (e) => toast(`Capture failed: ${e.payload}`, true));
     const unNav = listen<string>("navigate", (e) => {
