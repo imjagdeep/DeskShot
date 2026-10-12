@@ -215,7 +215,11 @@ pub fn finish(app: &AppHandle, index: usize, rect: Option<Rect>) -> Result<(), S
 /// Keep a finished capture: history, clipboard, saved copy, then tell the
 /// window. An edited picture (`edited`) comes from the open window itself,
 /// so no window is raised and no notification shown.
-pub fn keep(app: &AppHandle, img: image::RgbaImage, edited: bool) -> Result<history::Entry, String> {
+pub fn keep(
+    app: &AppHandle,
+    img: image::RgbaImage,
+    edited: bool,
+) -> Result<history::Entry, String> {
     let now = chrono::Local::now();
     let id = now.format("%Y%m%d-%H%M%S-%3f").to_string();
     let (settings, data) = {
