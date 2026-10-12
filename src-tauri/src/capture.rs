@@ -135,7 +135,7 @@ fn list_windows() -> Vec<WinInfo> {
             Some((w.z().unwrap_or(0), WinInfo { title, app, area }))
         })
         .collect();
-    out.sort_by(|a, b| b.0.cmp(&a.0));
+    out.sort_by_key(|a| std::cmp::Reverse(a.0));
     out.into_iter().map(|(_, w)| w).collect()
 }
 
