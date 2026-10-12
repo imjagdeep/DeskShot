@@ -53,6 +53,7 @@ export function useAppMenus(page: Page, go: (p: Page) => void): MenuDef[] {
           },
         },
         "-",
+        { id: "account", label: "DeskLab account…", run: () => go("account") },
         { id: "settings", label: "Settings…", accel: "Mod+,", run: () => go("settings") },
         "-",
         // Closing the window keeps DeskShot in the tray; this quits for real.

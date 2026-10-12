@@ -99,6 +99,13 @@ export const SettingsIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const AccountIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21a8 8 0 0 1 16 0" />
+  </Svg>
+);
+
 export const OpenIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M3.5 7.5V18a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9.5A1.5 1.5 0 0 0 19 8h-7l-2-2.5H5A1.5 1.5 0 0 0 3.5 7z" />
