@@ -14,6 +14,7 @@ import { checkAndDownload, dailyCheckDue } from "./lib/updates";
 import { Capture } from "./pages/Capture";
 import { History } from "./pages/History";
 import { SettingsPage } from "./pages/Settings";
+import { AccountPage } from "./account/AccountPage";
 import { ShellDialogs } from "./shell/Dialogs";
 import { MenuBar } from "./shell/MenuBar";
 import { applySavedZoom } from "./shell/shell";
@@ -129,6 +130,7 @@ export default function App() {
               <Editor key={editEntry.id} entry={editEntry} onExport={onExport} onClose={() => setPageRaw("capture")} />
             </Suspense>
           )}
+          {page === "account" && <AccountPage app="DeskShot" toast={toast} />}
           {page === "settings" && <SettingsPage />}
         </main>
       </div>

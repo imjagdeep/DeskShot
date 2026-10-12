@@ -2,6 +2,7 @@
 //! shortcut, one selection overlay per monitor, history, editor and OCR in
 //! the window.
 
+mod account;
 mod capture;
 mod clipboard;
 mod desklab;
@@ -326,6 +327,55 @@ fn open_tool(id: String, file: Option<PathBuf>) -> CmdResult<()> {
     desklab::open(&id, file.as_deref())
 }
 
+// ---------- the optional DeskLab account (all calls go through account.rs) ----------
+
+type Acct<'a> = State<'a, account::Account>;
+
+#[tauri::command]
+async fn account_status(acct: Acct<'_>) -> CmdResult<account::Status> {
+    acct.status().await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_send_code(acct: Acct<'_>, email: String) -> CmdResult<()> {
+    acct.send_code(&email).await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_verify(acct: Acct<'_>, email: String, code: String) -> CmdResult<()> {
+    acct.verify(&email, &code).await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_login(acct: Acct<'_>, email: String, password: String) -> CmdResult<()> {
+    acct.login(&email, &password).await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_logout(acct: Acct<'_>) -> CmdResult<()> {
+    acct.logout().await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_set_password(acct: Acct<'_>, password: String, current: Option<String>) -> CmdResult<()> {
+    acct.set_password(&password, current.as_deref()).await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_remove_password(acct: Acct<'_>) -> CmdResult<()> {
+    acct.remove_password().await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_sign_out_device(acct: Acct<'_>, id: String) -> CmdResult<()> {
+    acct.sign_out_device(&id).await.map_err(account::plain)
+}
+
+#[tauri::command]
+async fn account_delete(acct: Acct<'_>, confirm: String) -> CmdResult<()> {
+    acct.delete(&confirm).await.map_err(account::plain)
+}
+
 /// A downloaded update is ready: tell someone who only has the tray icon.
 #[tauri::command]
 fn notify_update(app: AppHandle, version: String) {
@@ -455,6 +505,7 @@ pub fn run() {
                 mode: Mode::Area,
                 pins: Default::default(),
             }));
+            app.manage(account::Account::new("deskshot")?);
             tray::build(app.handle())?;
 
             // Started with the computer: stay in the tray.
@@ -510,6 +561,15 @@ pub fn run() {
             desklab_tools,
             open_tool,
             notify_update,
+            account_status,
+            account_send_code,
+            account_verify,
+            account_login,
+            account_logout,
+            account_set_password,
+            account_remove_password,
+            account_sign_out_device,
+            account_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running DeskShot");

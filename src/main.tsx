@@ -7,6 +7,7 @@ import { Pin } from "./Pin";
 import "./styles/theme.css";
 import "./styles/shell.css";
 import "./styles/shot.css";
+import "./styles/account.css";
 
 // One bundle, three kinds of window: the app, capture overlays and pins.
 const label = getCurrentWindow().label;
