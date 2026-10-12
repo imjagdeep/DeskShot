@@ -85,7 +85,8 @@ fn api_error(status: u16, body: &str) -> String {
 }
 
 fn keychain(app: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new(SERVICE, app).map_err(|e| format!("the system keychain is not available: {e}"))
+    keyring::Entry::new(SERVICE, app)
+        .map_err(|e| format!("the system keychain is not available: {e}"))
 }
 
 fn load(app: &str) -> Result<Option<Stored>, String> {
@@ -106,7 +107,9 @@ fn save(app: &str, s: &Stored) -> Result<(), String> {
 fn forget(app: &str) -> Result<(), String> {
     match keychain(app)?.delete_credential() {
         Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-        Err(e) => Err(format!("couldn't remove the sign-in from the keychain: {e}")),
+        Err(e) => Err(format!(
+            "couldn't remove the sign-in from the keychain: {e}"
+        )),
     }
 }
 
@@ -133,8 +136,14 @@ impl Account {
         })
     }
 
-    async fn post(&self, path: &str, body: serde_json::Value, token: Option<&str>) -> Result<String, String> {
-        self.send(reqwest::Method::POST, path, Some(body), token).await
+    async fn post(
+        &self,
+        path: &str,
+        body: serde_json::Value,
+        token: Option<&str>,
+    ) -> Result<String, String> {
+        self.send(reqwest::Method::POST, path, Some(body), token)
+            .await
     }
 
     async fn send(
@@ -163,7 +172,13 @@ impl Account {
 
     /// Keep a fresh sign-in: refresh token to the keychain, access to memory.
     async fn keep(&self, t: Tokens, email: &str) -> Result<(), String> {
-        save(self.app, &Stored { refresh: t.refresh, email: email.to_string() })?;
+        save(
+            self.app,
+            &Stored {
+                refresh: t.refresh,
+                email: email.to_string(),
+            },
+        )?;
         let until = Instant::now() + Duration::from_secs(t.expires_in.saturating_sub(30));
         *self.access.lock().await = Some((t.access, until));
         Ok(())
@@ -182,10 +197,23 @@ impl Account {
         let Some(stored) = load(self.app)? else {
             return Err("401:Not signed in.".into());
         };
-        match self.post("/v1/auth/refresh", serde_json::json!({ "refresh": stored.refresh }), None).await {
+        match self
+            .post(
+                "/v1/auth/refresh",
+                serde_json::json!({ "refresh": stored.refresh }),
+                None,
+            )
+            .await
+        {
             Ok(text) => {
                 let t: Tokens = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-                save(self.app, &Stored { refresh: t.refresh, email: stored.email })?;
+                save(
+                    self.app,
+                    &Stored {
+                        refresh: t.refresh,
+                        email: stored.email,
+                    },
+                )?;
                 let until = Instant::now() + Duration::from_secs(t.expires_in.saturating_sub(30));
                 *slot = Some((t.access.clone(), until));
                 Ok(t.access)
@@ -201,9 +229,17 @@ impl Account {
     }
 
     /// A signed-in call; on 401 the token is refreshed once and the call retried.
-    async fn authed(&self, method: reqwest::Method, path: &str, body: Option<serde_json::Value>) -> Result<String, String> {
+    async fn authed(
+        &self,
+        method: reqwest::Method,
+        path: &str,
+        body: Option<serde_json::Value>,
+    ) -> Result<String, String> {
         let t = self.token(false).await?;
-        match self.send(method.clone(), path, body.clone(), Some(&t)).await {
+        match self
+            .send(method.clone(), path, body.clone(), Some(&t))
+            .await
+        {
             Err(e) if e.starts_with("401:") => {
                 let t = self.token(true).await?;
                 self.send(method, path, body, Some(&t)).await
@@ -238,27 +274,44 @@ impl Account {
     }
 
     pub async fn send_code(&self, email: &str) -> Result<(), String> {
-        self.post("/v1/auth/code", serde_json::json!({ "email": email }), None).await.map(|_| ())
+        self.post("/v1/auth/code", serde_json::json!({ "email": email }), None)
+            .await
+            .map(|_| ())
     }
 
     pub async fn verify(&self, email: &str, code: &str) -> Result<(), String> {
         let text = self
-            .post("/v1/auth/verify", serde_json::json!({ "email": email, "code": code, "device": device(self.app) }), None)
+            .post(
+                "/v1/auth/verify",
+                serde_json::json!({ "email": email, "code": code, "device": device(self.app) }),
+                None,
+            )
             .await?;
-        self.keep(serde_json::from_str(&text).map_err(|e| e.to_string())?, email).await
+        self.keep(
+            serde_json::from_str(&text).map_err(|e| e.to_string())?,
+            email,
+        )
+        .await
     }
 
     pub async fn login(&self, email: &str, password: &str) -> Result<(), String> {
         let text = self
             .post("/v1/auth/login", serde_json::json!({ "email": email, "password": password, "device": device(self.app) }), None)
             .await?;
-        self.keep(serde_json::from_str(&text).map_err(|e| e.to_string())?, email).await
+        self.keep(
+            serde_json::from_str(&text).map_err(|e| e.to_string())?,
+            email,
+        )
+        .await
     }
 
     /// Sign out here. Forgets the sign-in even if the server can't be reached.
     pub async fn logout(&self) -> Result<(), String> {
         if let Ok(t) = self.token(false).await {
-            if let Err(e) = self.post("/v1/auth/logout", serde_json::json!({}), Some(&t)).await {
+            if let Err(e) = self
+                .post("/v1/auth/logout", serde_json::json!({}), Some(&t))
+                .await
+            {
                 tracing::warn!("signing out on the server failed (forgotten here anyway): {e}");
             }
         }
@@ -268,24 +321,34 @@ impl Account {
 
     pub async fn set_password(&self, password: &str, current: Option<&str>) -> Result<(), String> {
         let body = serde_json::json!({ "password": password, "current": current });
-        self.authed(reqwest::Method::PUT, "/v1/me/password", Some(body)).await.map(|_| ())
+        self.authed(reqwest::Method::PUT, "/v1/me/password", Some(body))
+            .await
+            .map(|_| ())
     }
 
     pub async fn remove_password(&self) -> Result<(), String> {
-        self.authed(reqwest::Method::DELETE, "/v1/me/password", None).await.map(|_| ())
+        self.authed(reqwest::Method::DELETE, "/v1/me/password", None)
+            .await
+            .map(|_| ())
     }
 
     pub async fn sign_out_device(&self, id: &str) -> Result<(), String> {
         if !id.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
             return Err("unknown device".into());
         }
-        self.authed(reqwest::Method::DELETE, &format!("/v1/devices/{id}"), None).await.map(|_| ())
+        self.authed(reqwest::Method::DELETE, &format!("/v1/devices/{id}"), None)
+            .await
+            .map(|_| ())
     }
 
     /// Delete the account and everything stored for it, then forget it here.
     pub async fn delete(&self, confirm: &str) -> Result<(), String> {
-        self.authed(reqwest::Method::DELETE, "/v1/me", Some(serde_json::json!({ "confirm": confirm })))
-            .await?;
+        self.authed(
+            reqwest::Method::DELETE,
+            "/v1/me",
+            Some(serde_json::json!({ "confirm": confirm })),
+        )
+        .await?;
         *self.access.lock().await = None;
         forget(self.app)
     }
@@ -294,7 +357,9 @@ impl Account {
 /// "401:Not signed in." → "Not signed in." (the status code is for this file only).
 pub fn plain(e: String) -> String {
     match e.split_once(':') {
-        Some((code, msg)) if code.len() == 3 && code.chars().all(|c| c.is_ascii_digit()) => msg.to_string(),
+        Some((code, msg)) if code.len() == 3 && code.chars().all(|c| c.is_ascii_digit()) => {
+            msg.to_string()
+        }
         _ => e,
     }
 }
@@ -305,7 +370,10 @@ mod tests {
 
     #[test]
     fn errors_read_plainly() {
-        assert_eq!(api_error(401, r#"{"error":"That code isn't right."}"#), "That code isn't right.");
+        assert_eq!(
+            api_error(401, r#"{"error":"That code isn't right."}"#),
+            "That code isn't right."
+        );
         assert!(api_error(429, "").starts_with("Too many tries"));
         assert!(api_error(500, "<html>").contains("(500)"));
         assert_eq!(plain("401:Not signed in.".into()), "Not signed in.");
@@ -315,8 +383,14 @@ mod tests {
 
     #[test]
     fn stored_sign_in_round_trips() {
-        let s = Stored { refresh: "r".into(), email: "a@b.co".into() };
+        let s = Stored {
+            refresh: "r".into(),
+            email: "a@b.co".into(),
+        };
         let back: Stored = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
-        assert_eq!((back.refresh, back.email), ("r".to_string(), "a@b.co".to_string()));
+        assert_eq!(
+            (back.refresh, back.email),
+            ("r".to_string(), "a@b.co".to_string())
+        );
     }
 }

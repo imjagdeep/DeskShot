@@ -357,8 +357,14 @@ async fn account_logout(acct: Acct<'_>) -> CmdResult<()> {
 }
 
 #[tauri::command]
-async fn account_set_password(acct: Acct<'_>, password: String, current: Option<String>) -> CmdResult<()> {
-    acct.set_password(&password, current.as_deref()).await.map_err(account::plain)
+async fn account_set_password(
+    acct: Acct<'_>,
+    password: String,
+    current: Option<String>,
+) -> CmdResult<()> {
+    acct.set_password(&password, current.as_deref())
+        .await
+        .map_err(account::plain)
 }
 
 #[tauri::command]
