@@ -62,7 +62,12 @@ pub fn encode_png(img: &RgbaImage) -> Result<Vec<u8>, String> {
         image::codecs::png::CompressionType::Fast,
         image::codecs::png::FilterType::Adaptive,
     )
-    .write_image(img.as_raw(), img.width(), img.height(), image::ExtendedColorType::Rgba8)
+    .write_image(
+        img.as_raw(),
+        img.width(),
+        img.height(),
+        image::ExtendedColorType::Rgba8,
+    )
     .map_err(|e| format!("cannot encode the picture: {e}"))?;
     Ok(out)
 }
@@ -75,7 +80,12 @@ pub fn encode(img: &RgbaImage, format: Format, quality: u8) -> Result<Vec<u8>, S
             let rgb = image::DynamicImage::ImageRgba8(img.clone()).to_rgb8();
             let mut out = Vec::new();
             image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, quality)
-                .write_image(rgb.as_raw(), rgb.width(), rgb.height(), image::ExtendedColorType::Rgb8)
+                .write_image(
+                    rgb.as_raw(),
+                    rgb.width(),
+                    rgb.height(),
+                    image::ExtendedColorType::Rgb8,
+                )
                 .map_err(|e| format!("cannot encode the picture: {e}"))?;
             Ok(out)
         }
@@ -95,9 +105,17 @@ pub fn free_name(folder: &Path, stamp: &str, ext: &str) -> PathBuf {
 }
 
 /// Store a capture in the history, newest first, trimming to `limit`.
-pub fn add(data: &Path, id: &str, img: &RgbaImage, saved: Option<PathBuf>, created: i64, limit: usize) -> Result<Entry, String> {
+pub fn add(
+    data: &Path,
+    id: &str,
+    img: &RgbaImage,
+    saved: Option<PathBuf>,
+    created: i64,
+    limit: usize,
+) -> Result<Entry, String> {
     let path = png_path(data, id)?;
-    std::fs::create_dir_all(dir(data)).map_err(|e| format!("cannot create the history folder: {e}"))?;
+    std::fs::create_dir_all(dir(data))
+        .map_err(|e| format!("cannot create the history folder: {e}"))?;
     std::fs::write(&path, encode_png(img)?).map_err(|e| format!("cannot keep the capture: {e}"))?;
     let entry = Entry {
         id: id.to_string(),

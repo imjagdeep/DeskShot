@@ -80,7 +80,11 @@ fn get_settings(state: State<'_, AppState>) -> Settings {
 }
 
 #[tauri::command]
-fn save_settings(app: AppHandle, state: State<'_, AppState>, settings: Settings) -> CmdResult<Settings> {
+fn save_settings(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    settings: Settings,
+) -> CmdResult<Settings> {
     let mut next = settings.clamp();
     let (before, dir) = {
         let st = state.lock();
@@ -137,12 +141,19 @@ fn overlay_info(app: AppHandle, window: WebviewWindow) -> CmdResult<shoot::Overl
 /// The frozen picture of this overlay's monitor (PNG bytes, sent raw).
 #[tauri::command]
 fn overlay_image(app: AppHandle, window: WebviewWindow) -> CmdResult<Response> {
-    Ok(Response::new(shoot::overlay_png(&app, overlay_of(&window)?)?))
+    Ok(Response::new(shoot::overlay_png(
+        &app,
+        overlay_of(&window)?,
+    )?))
 }
 
 /// The selection (pixels of this monitor's picture), or none to cancel.
 #[tauri::command]
-fn overlay_finish(app: AppHandle, window: WebviewWindow, rect: Option<capture::Rect>) -> CmdResult<()> {
+fn overlay_finish(
+    app: AppHandle,
+    window: WebviewWindow,
+    rect: Option<capture::Rect>,
+) -> CmdResult<()> {
     shoot::finish(&app, overlay_of(&window)?, rect)
 }
 
@@ -188,11 +199,16 @@ fn save_png(state: State<'_, AppState>, request: tauri::ipc::Request<'_>) -> Cmd
         .map(|v| PathBuf::from(percent_decode(v)))
         .ok_or("no file name given")?;
     let jpg = matches!(
-        path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).as_deref(),
+        path.extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_ascii_lowercase())
+            .as_deref(),
         Some("jpg" | "jpeg")
     );
     let out = if jpg {
-        let img = image::load_from_memory(bytes).map_err(|e| format!("not a picture: {e}"))?.to_rgba8();
+        let img = image::load_from_memory(bytes)
+            .map_err(|e| format!("not a picture: {e}"))?
+            .to_rgba8();
         let q = state.lock().settings.jpg_quality;
         history::encode(&img, settings::Format::Jpg, q)?
     } else {
@@ -252,7 +268,9 @@ fn open_link(app: AppHandle, id: String) -> CmdResult<()> {
         "deskfolio" => "https://github.com/imjagdeep/DeskFolio/releases/latest",
         "deskshot" => "https://github.com/imjagdeep/DeskShot/releases/latest",
         // macOS: System Settings › Privacy & Security › Screen Recording.
-        "screen-permission" => "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
+        "screen-permission" => {
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+        }
         _ => return Err(format!("unknown link {id}")),
     };
     app.opener()
@@ -450,7 +468,10 @@ mod tests {
 
     #[test]
     fn decodes_header_paths() {
-        assert_eq!(percent_decode("C%3A%5CUsers%5Cme%5Cshot%201.png"), r"C:\Users\me\shot 1.png");
+        assert_eq!(
+            percent_decode("C%3A%5CUsers%5Cme%5Cshot%201.png"),
+            r"C:\Users\me\shot 1.png"
+        );
         assert_eq!(percent_decode("100%"), "100%");
     }
 }

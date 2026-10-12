@@ -8,7 +8,9 @@ use crate::settings::Format;
 use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -59,12 +61,20 @@ fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
     if mode == Mode::Screen {
         let i = cursor_shot(app, &frozen);
         let shot = &frozen.shots[i];
-        let full = Rect { x: 0, y: 0, w: shot.image.width(), h: shot.image.height() };
+        let full = Rect {
+            x: 0,
+            y: 0,
+            w: shot.image.width(),
+            h: shot.image.height(),
+        };
         let img = capture::crop(shot, &full).ok_or("the screen picture is empty")?;
         return keep(app, img);
     }
-    let places: Vec<Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>> =
-        frozen.shots.iter().map(|s| tauri_place(app, &s.area)).collect();
+    let places: Vec<Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>> = frozen
+        .shots
+        .iter()
+        .map(|s| tauri_place(app, &s.area))
+        .collect();
     {
         let state = app.state::<AppState>();
         let mut st = state.lock();
@@ -88,7 +98,8 @@ fn tauri_place(app: &AppHandle, area: &Rect) -> Option<(PhysicalPosition<i32>, P
             let p = m.position();
             let s = m.scale_factor();
             (p.x == area.x && p.y == area.y)
-                || ((p.x as f64 / s).round() as i32 == area.x && (p.y as f64 / s).round() as i32 == area.y)
+                || ((p.x as f64 / s).round() as i32 == area.x
+                    && (p.y as f64 / s).round() as i32 == area.y)
         })
         .map(|m| (*m.position(), *m.size()))
 }
@@ -106,23 +117,32 @@ fn cursor_shot(app: &AppHandle, f: &Frozen) -> usize {
         .iter()
         .position(|shot| {
             (shot.area.x == p.x && shot.area.y == p.y)
-                || (shot.area.x == (p.x as f64 / s).round() as i32 && shot.area.y == (p.y as f64 / s).round() as i32)
+                || (shot.area.x == (p.x as f64 / s).round() as i32
+                    && shot.area.y == (p.y as f64 / s).round() as i32)
         })
         .unwrap_or_else(|| capture::monitor_at(&f.shots, pos.x as i32, pos.y as i32))
 }
 
-fn open_overlay(app: &AppHandle, i: usize, place: Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>) -> tauri::Result<()> {
-    let w = WebviewWindowBuilder::new(app, format!("{OVERLAY}{i}"), WebviewUrl::App("index.html".into()))
-        .title("DeskShot capture")
-        .decorations(false)
-        .resizable(false)
-        .skip_taskbar(true)
-        .always_on_top(true)
-        .shadow(false)
-        .visible_on_all_workspaces(true)
-        // The page shows the window once the frozen picture is drawn.
-        .visible(false)
-        .build()?;
+fn open_overlay(
+    app: &AppHandle,
+    i: usize,
+    place: Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>,
+) -> tauri::Result<()> {
+    let w = WebviewWindowBuilder::new(
+        app,
+        format!("{OVERLAY}{i}"),
+        WebviewUrl::App("index.html".into()),
+    )
+    .title("DeskShot capture")
+    .decorations(false)
+    .resizable(false)
+    .skip_taskbar(true)
+    .always_on_top(true)
+    .shadow(false)
+    .visible_on_all_workspaces(true)
+    // The page shows the window once the frozen picture is drawn.
+    .visible(false)
+    .build()?;
     if let Some((pos, size)) = place {
         w.set_position(pos)?;
         w.set_size(size)?;
@@ -205,9 +225,18 @@ fn keep(app: &AppHandle, img: image::RgbaImage) -> Result<(), String> {
             Some(f) => f.clone(),
             None => default_folder(app)?,
         };
-        std::fs::create_dir_all(&folder).map_err(|e| format!("cannot create {}: {e}", folder.display()))?;
-        let ext = if settings.format == Format::Jpg { "jpg" } else { "png" };
-        let path = history::free_name(&folder, &now.format("%Y-%m-%d at %H.%M.%S").to_string(), ext);
+        std::fs::create_dir_all(&folder)
+            .map_err(|e| format!("cannot create {}: {e}", folder.display()))?;
+        let ext = if settings.format == Format::Jpg {
+            "jpg"
+        } else {
+            "png"
+        };
+        let path = history::free_name(
+            &folder,
+            &now.format("%Y-%m-%d at %H.%M.%S").to_string(),
+            ext,
+        );
         let bytes = history::encode(&img, settings.format, settings.jpg_quality)?;
         std::fs::write(&path, bytes).map_err(|e| format!("cannot save {}: {e}", path.display()))?;
         Some(path)
@@ -232,7 +261,15 @@ fn keep(app: &AppHandle, img: image::RgbaImage) -> Result<(), String> {
     if settings.open_after_capture {
         crate::tray::show_main(app);
     } else {
-        crate::notify(app, "Captured", if settings.copy_to_clipboard { "Copied to the clipboard." } else { "Saved." });
+        crate::notify(
+            app,
+            "Captured",
+            if settings.copy_to_clipboard {
+                "Copied to the clipboard."
+            } else {
+                "Saved."
+            },
+        );
     }
     Ok(())
 }

@@ -21,7 +21,9 @@ mod imp {
             .creation_flags(NO_WINDOW)
             .output();
         match out {
-            Ok(o) if o.status.success() => parse_query(&String::from_utf8_lossy(&o.stdout)).unwrap_or(true),
+            Ok(o) if o.status.success() => {
+                parse_query(&String::from_utf8_lossy(&o.stdout)).unwrap_or(true)
+            }
             // Not set: Windows 11's default is on.
             Ok(_) => true,
             Err(e) => {
@@ -33,7 +35,17 @@ mod imp {
 
     pub fn set_snipping(enabled: bool) -> Result<(), String> {
         let out = Command::new("reg")
-            .args(["add", KEY, "/v", VALUE, "/t", "REG_DWORD", "/d", if enabled { "1" } else { "0" }, "/f"])
+            .args([
+                "add",
+                KEY,
+                "/v",
+                VALUE,
+                "/t",
+                "REG_DWORD",
+                "/d",
+                if enabled { "1" } else { "0" },
+                "/f",
+            ])
             .creation_flags(NO_WINDOW)
             .output()
             .map_err(|e| format!("cannot change the Print Screen setting: {e}"))?;
@@ -74,7 +86,10 @@ mod tests {
     fn parses_reg_query_output() {
         let out = "\r\nHKEY_CURRENT_USER\\Control Panel\\Keyboard\r\n    PrintScreenKeyForSnippingEnabled    REG_DWORD    0x0\r\n";
         assert_eq!(super::imp::parse_query(out), Some(false));
-        assert_eq!(super::imp::parse_query(&out.replace("0x0", "0x1")), Some(true));
+        assert_eq!(
+            super::imp::parse_query(&out.replace("0x0", "0x1")),
+            Some(true)
+        );
         assert_eq!(super::imp::parse_query("nothing"), None);
     }
 }

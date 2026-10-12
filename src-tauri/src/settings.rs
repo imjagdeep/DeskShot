@@ -71,11 +71,13 @@ impl Settings {
 
     /// Write through a temp file so a crash can't leave half a file.
     pub fn save(&self, dir: &Path) -> Result<(), String> {
-        std::fs::create_dir_all(dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+        std::fs::create_dir_all(dir)
+            .map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
         let json = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
         let tmp = dir.join("settings.json.tmp");
         std::fs::write(&tmp, json).map_err(|e| format!("cannot write settings: {e}"))?;
-        std::fs::rename(&tmp, dir.join("settings.json")).map_err(|e| format!("cannot save settings: {e}"))
+        std::fs::rename(&tmp, dir.join("settings.json"))
+            .map_err(|e| format!("cannot save settings: {e}"))
     }
 
     pub fn clamp(mut self) -> Settings {

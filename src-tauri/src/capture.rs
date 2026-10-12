@@ -90,7 +90,9 @@ pub fn grab_all() -> Result<Frozen, String> {
             w: m.width().map_err(|e| err("screen size", e))?,
             h: m.height().map_err(|e| err("screen size", e))?,
         };
-        let image = m.capture_image().map_err(|e| err("cannot capture the screen", e))?;
+        let image = m
+            .capture_image()
+            .map_err(|e| err("cannot capture the screen", e))?;
         shots.push(Shot { area, image });
     }
     if shots.is_empty() {
@@ -159,8 +161,12 @@ pub fn to_pixels(r: &Rect, shot: &Shot) -> Rect {
     let y0 = ((r.y - shot.area.y) as f64 * s).round() as i64;
     let x1 = (((r.x - shot.area.x) as f64 + r.w as f64) * s).round() as i64;
     let y1 = (((r.y - shot.area.y) as f64 + r.h as f64) * s).round() as i64;
-    clamp_to_image(x0, y0, x1, y1, shot.image.width(), shot.image.height())
-        .unwrap_or(Rect { x: 0, y: 0, w: 0, h: 0 })
+    clamp_to_image(x0, y0, x1, y1, shot.image.width(), shot.image.height()).unwrap_or(Rect {
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0,
+    })
 }
 
 /// A selection (picture pixels, any corner order) kept inside the picture;
@@ -194,7 +200,10 @@ pub fn monitor_at(shots: &[Shot], x: i32, y: i32) -> usize {
     shots
         .iter()
         .position(|s| {
-            x >= s.area.x && (x as i64) < s.area.right() && y >= s.area.y && (y as i64) < s.area.bottom()
+            x >= s.area.x
+                && (x as i64) < s.area.right()
+                && y >= s.area.y
+                && (y as i64) < s.area.bottom()
         })
         .unwrap_or(0)
 }
@@ -212,10 +221,33 @@ mod tests {
 
     #[test]
     fn intersect_and_no_overlap() {
-        let a = Rect { x: 0, y: 0, w: 100, h: 100 };
-        let b = Rect { x: 50, y: 60, w: 100, h: 100 };
-        assert_eq!(a.intersect(&b), Some(Rect { x: 50, y: 60, w: 50, h: 40 }));
-        let c = Rect { x: 100, y: 0, w: 10, h: 10 };
+        let a = Rect {
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 100,
+        };
+        let b = Rect {
+            x: 50,
+            y: 60,
+            w: 100,
+            h: 100,
+        };
+        assert_eq!(
+            a.intersect(&b),
+            Some(Rect {
+                x: 50,
+                y: 60,
+                w: 50,
+                h: 40
+            })
+        );
+        let c = Rect {
+            x: 100,
+            y: 0,
+            w: 10,
+            h: 10,
+        };
         assert_eq!(a.intersect(&c), None);
     }
 
@@ -226,23 +258,53 @@ mod tests {
         let w = WinInfo {
             title: "Notes".into(),
             app: "Notes".into(),
-            area: Rect { x: 1400, y: 100, w: 400, h: 300 },
+            area: Rect {
+                x: 1400,
+                y: 100,
+                w: 400,
+                h: 300,
+            },
         };
         let t = targets_for(&s, &[w]);
         // Clipped at the monitor's left edge, then doubled.
-        assert_eq!(t[0].rect, Rect { x: 0, y: 200, w: 720, h: 600 });
+        assert_eq!(
+            t[0].rect,
+            Rect {
+                x: 0,
+                y: 200,
+                w: 720,
+                h: 600
+            }
+        );
     }
 
     #[test]
     fn selection_any_direction_is_clamped() {
-        assert_eq!(clamp_to_image(300, 200, -50, 10, 250, 400), Some(Rect { x: 0, y: 10, w: 250, h: 190 }));
+        assert_eq!(
+            clamp_to_image(300, 200, -50, 10, 250, 400),
+            Some(Rect {
+                x: 0,
+                y: 10,
+                w: 250,
+                h: 190
+            })
+        );
         assert_eq!(clamp_to_image(5, 5, 5, 90, 100, 100), None);
     }
 
     #[test]
     fn crop_and_monitor_lookup() {
         let s = shot(0, 0, 200, 100, 1);
-        let img = crop(&s, &Rect { x: 150, y: 50, w: 100, h: 100 }).unwrap();
+        let img = crop(
+            &s,
+            &Rect {
+                x: 150,
+                y: 50,
+                w: 100,
+                h: 100,
+            },
+        )
+        .unwrap();
         assert_eq!((img.width(), img.height()), (50, 50));
         let shots = vec![shot(0, 0, 100, 100, 1), shot(-100, 0, 100, 100, 1)];
         assert_eq!(monitor_at(&shots, -10, 5), 1);

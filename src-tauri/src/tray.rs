@@ -6,7 +6,13 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Emitter, Manager};
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
-    let area = MenuItem::with_id(app, "area", "Capture area", true, Some(crate::SHORTCUT_TEXT))?;
+    let area = MenuItem::with_id(
+        app,
+        "area",
+        "Capture area",
+        true,
+        Some(crate::SHORTCUT_TEXT),
+    )?;
     let window = MenuItem::with_id(app, "window", "Capture window", true, None::<&str>)?;
     let screen = MenuItem::with_id(app, "screen", "Capture full screen", true, None::<&str>)?;
     let delay = Submenu::with_items(
