@@ -79,6 +79,8 @@ export const api = {
   historyList: () => invoke<HistoryEntry[]>("history_list"),
   historyImage: async (id: string) => new Uint8Array(await invoke<ArrayBuffer>("history_image", { id })),
   historyDelete: (id: string) => invoke<void>("history_delete", { id }),
+  /** Keep an edited picture (PNG bytes) as a new capture. */
+  saveEdit: (png: Uint8Array) => invoke<HistoryEntry>("save_edit", png),
   /** PNG bytes onto the clipboard as a picture. */
   copyPng: (png: Uint8Array) => invoke<void>("copy_png", png),
   /** PNG bytes saved to `path` (JPG when the name ends in .jpg). */

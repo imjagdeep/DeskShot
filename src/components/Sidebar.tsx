@@ -3,16 +3,17 @@ import { useAppInfo } from "../lib/store";
 import { SideNav, type NavGroup } from "../shell/SideNav";
 import { CameraIcon, HistoryIcon, SettingsIcon } from "./Icons";
 
-export type Page = "capture" | "history" | "settings";
+export type Page = "capture" | "history" | "settings" | "editor";
 
-/** The pages in sidebar order (the Tools menu and Ctrl+1… use it too). */
-export const PAGES: { page: Page; label: string; group: string }[] = [
+/** The pages in sidebar order (the View menu and Ctrl+1… use it too). The
+ * editor isn't listed: it opens from a capture's Edit button. */
+export const PAGES: { page: Exclude<Page, "editor">; label: string; group: string }[] = [
   { page: "capture", label: "Capture", group: "Screenshots" },
   { page: "history", label: "History", group: "Screenshots" },
   { page: "settings", label: "Settings", group: "App" },
 ];
 
-const ICONS: Record<Page, (p: { size?: number }) => React.ReactElement> = {
+const ICONS: Record<Exclude<Page, "editor">, (p: { size?: number }) => React.ReactElement> = {
   capture: CameraIcon,
   history: HistoryIcon,
   settings: SettingsIcon,

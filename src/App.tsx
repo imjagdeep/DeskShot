@@ -1,13 +1,14 @@
 import { listen } from "@tauri-apps/api/event";
+import { save } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useAppMenus } from "./appMenu";
 import logo from "./assets/logo.png";
 import { Toasts } from "./components/Common";
 import { PAGES, Sidebar, type Page } from "./components/Sidebar";
 import { UpdateBanner } from "./components/UpdateBanner";
-import { api } from "./lib/api";
-import { refreshCaptures, watchCaptures } from "./lib/captures";
+import { api, type HistoryEntry } from "./lib/api";
+import { fileStamp, refreshCaptures, useCaptures, watchCaptures } from "./lib/captures";
 import { refreshAppInfo, toast, toastError, useAppInfo, useAutoUpdate, useTheme } from "./lib/store";
 import { checkAndDownload, dailyCheckDue } from "./lib/updates";
 import { Capture } from "./pages/Capture";
@@ -17,10 +18,44 @@ import { ShellDialogs } from "./shell/Dialogs";
 import { MenuBar } from "./shell/MenuBar";
 import { applySavedZoom } from "./shell/shell";
 
+// The editor (and Konva) load the first time it's opened.
+const Editor = lazy(() => import("./editor/Editor").then((m) => ({ default: m.Editor })));
+
 export default function App() {
   const [page, setPageRaw] = useState<Page>("capture");
   const setPage = useCallback((p: Page) => setPageRaw(p), []);
   const [selected, setSelected] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const captures = useCaptures();
+  const editEntry = captures?.find((e) => e.id === editing) ?? null;
+  const openEditor = useCallback((e: HistoryEntry) => {
+    setEditing(e.id);
+    setPageRaw("editor");
+  }, []);
+
+  // The editor's three ways out.
+  const onExport = async (png: Uint8Array, how: "save" | "copy" | "file") => {
+    if (how === "copy") {
+      await api.copyPng(png);
+      toast("Copied to the clipboard");
+    } else if (how === "file") {
+      const path = await save({
+        title: "Save the edited picture",
+        defaultPath: `DeskShot ${fileStamp(Date.now())} (edited).png`,
+        filters: [
+          { name: "PNG picture", extensions: ["png"] },
+          { name: "JPG picture", extensions: ["jpg"] },
+        ],
+      });
+      if (!path) return;
+      await api.savePng(path, png);
+      toast("Saved");
+    } else {
+      // Arrives as a new capture ("captured" event): shown on the Capture page.
+      await api.saveEdit(png);
+      toast("Kept as a new capture");
+    }
+  };
   const menus = useAppMenus(page, setPage);
   const info = useAppInfo();
   const theme = useTheme();
@@ -38,7 +73,8 @@ export default function App() {
     });
     const unErr = listen<string>("capture-error", (e) => toast(`Capture failed: ${e.payload}`, true));
     const unNav = listen<string>("navigate", (e) => {
-      if (PAGES.some((p) => p.page === e.payload)) setPageRaw(e.payload as Page);
+      const target = PAGES.find((p) => p.page === e.payload);
+      if (target) setPageRaw(target.page);
     });
     return () => {
       for (const un of [unNew, unErr, unNav]) void un.then((f) => f());
@@ -71,7 +107,7 @@ export default function App() {
 
   // The window title names the page, like any desktop app.
   useEffect(() => {
-    const where = PAGES.find((p) => p.page === page)?.label ?? "";
+    const where = page === "editor" ? "Edit" : (PAGES.find((p) => p.page === page)?.label ?? "");
     void getCurrentWindow()
       .setTitle(page === "capture" ? "DeskShot" : `${where} — DeskShot`)
       .catch(() => undefined);
@@ -83,9 +119,14 @@ export default function App() {
       <MenuBar appName="DeskShot" menus={menus} onError={toastError} />
       <div className="app">
         <Sidebar page={page} onNavigate={setPage} />
-        <main className="content" ref={content}>
-          {page === "capture" && <Capture selected={selected} onSelect={setSelected} />}
-          {page === "history" && <History selected={selected} onSelect={setSelected} />}
+        <main className={page === "editor" ? "content content-editor" : "content"} ref={content}>
+          {page === "capture" && <Capture selected={selected} onSelect={setSelected} onEdit={openEditor} />}
+          {page === "history" && <History selected={selected} onSelect={setSelected} onEdit={openEditor} />}
+          {page === "editor" && editEntry && (
+            <Suspense fallback={<div className="page muted">Opening the editor…</div>}>
+              <Editor key={editEntry.id} entry={editEntry} onExport={onExport} onClose={() => setPageRaw("capture")} />
+            </Suspense>
+          )}
           {page === "settings" && <SettingsPage />}
         </main>
       </div>

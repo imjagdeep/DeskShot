@@ -68,7 +68,7 @@ fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
             h: shot.image.height(),
         };
         let img = capture::crop(shot, &full).ok_or("the screen picture is empty")?;
-        return keep(app, img);
+        return keep(app, img, false).map(|_| ());
     }
     let places: Vec<Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>> = frozen
         .shots
@@ -205,15 +205,17 @@ pub fn finish(app: &AppHandle, index: usize, rect: Option<Rect>) -> Result<(), S
     let app = app.clone();
     // Encoding and saving can take a moment on big screens: off this thread.
     std::thread::spawn(move || {
-        if let Err(e) = keep(&app, img) {
+        if let Err(e) = keep(&app, img, false) {
             report_error(&app, &e);
         }
     });
     Ok(())
 }
 
-/// Keep a finished capture: history, clipboard, saved copy, then tell the window.
-fn keep(app: &AppHandle, img: image::RgbaImage) -> Result<(), String> {
+/// Keep a finished capture: history, clipboard, saved copy, then tell the
+/// window. An edited picture (`edited`) comes from the open window itself,
+/// so no window is raised and no notification shown.
+pub fn keep(app: &AppHandle, img: image::RgbaImage, edited: bool) -> Result<history::Entry, String> {
     let now = chrono::Local::now();
     let id = now.format("%Y%m%d-%H%M%S-%3f").to_string();
     let (settings, data) = {
@@ -260,6 +262,9 @@ fn keep(app: &AppHandle, img: image::RgbaImage) -> Result<(), String> {
     }
 
     let _ = app.emit("captured", &entry);
+    if edited {
+        return Ok(entry);
+    }
     if settings.open_after_capture {
         crate::tray::show_main(app);
     } else {
@@ -273,7 +278,7 @@ fn keep(app: &AppHandle, img: image::RgbaImage) -> Result<(), String> {
             },
         );
     }
-    Ok(())
+    Ok(entry)
 }
 
 pub fn default_folder(app: &AppHandle) -> Result<std::path::PathBuf, String> {

@@ -89,3 +89,38 @@
 .ov-mag canvas { border-radius: 10px; border: 2px solid #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); image-rendering: pixelated; }
 .ov-mag div { position: static; }
 .ov-error { cursor: default; background: #111; }
+
+/* ---------- editor ---------- */
+.content-editor { overflow: hidden; display: flex; }
+.editor { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.editor-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; padding: 10px 14px; border-bottom: 0.5px solid var(--sep); background: var(--window); }
+.tool-group { display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 9px; background: var(--hover); }
+.tool { width: 32px; height: 30px; padding: 0; border-radius: 7px; background: none; box-shadow: none; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; }
+.tool:hover { background: var(--selected); color: var(--text); filter: none; }
+.tool.active { background: var(--accent-grad); color: var(--accent-text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18); }
+.swatch { width: 22px; height: 22px; padding: 0; margin: 2px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18); }
+.swatch.active { box-shadow: 0 0 0 2px var(--window), 0 0 0 4px var(--accent); }
+.swatch:hover { filter: brightness(1.08); }
+.editor-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.editor-canvas { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: repeating-conic-gradient(var(--hover) 0% 25%, transparent 0% 50%) 0 0 / 18px 18px, var(--group); }
+.editor-stage { position: relative; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.2); }
+.editor-stage[data-tool="select"] { cursor: default; }
+.editor-stage:not([data-tool="select"]) { cursor: crosshair; }
+.editor-stage[data-tool="text"] { cursor: text; }
+.text-edit {
+  position: absolute;
+  min-width: 160px;
+  min-height: 1.4em;
+  padding: 0;
+  border: 1px dashed rgba(0, 145, 255, 0.9);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  font-weight: 700;
+  font-family: "Segoe UI", -apple-system, system-ui, sans-serif;
+  line-height: 1;
+  resize: none;
+  overflow: hidden;
+}
+.text-edit:focus { box-shadow: none; outline: none; }
+.editor-foot { padding: 7px 14px; border-top: 0.5px solid var(--sep); background: var(--window); }

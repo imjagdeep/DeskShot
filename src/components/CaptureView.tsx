@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import { api, type HistoryEntry } from "../lib/api";
 import { deleteCapture, fileStamp, picturePng, pictureUrl, when } from "../lib/captures";
 import { toast, toastError } from "../lib/store";
-import { CopyIcon, FolderIcon, SaveIcon, TrashIcon } from "./Icons";
+import { CopyIcon, EditIcon, FolderIcon, SaveIcon, TrashIcon } from "./Icons";
 
-export function CaptureView({ entry, onDeleted }: { entry: HistoryEntry; onDeleted: () => void }) {
+export function CaptureView({ entry, onDeleted, onEdit }: { entry: HistoryEntry; onDeleted: () => void; onEdit: (e: HistoryEntry) => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
@@ -71,6 +71,9 @@ export function CaptureView({ entry, onDeleted }: { entry: HistoryEntry; onDelet
           </span>
         </div>
         <div className="shot-actions">
+          <button className="with-icon primary" onClick={() => onEdit(entry)} title="Draw, blur, crop (E)">
+            <EditIcon size={15} /> Edit
+          </button>
           <button className="with-icon" onClick={() => void copy()} title="Copy the picture">
             <CopyIcon size={15} /> Copy
           </button>

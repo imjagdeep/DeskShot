@@ -186,6 +186,19 @@ fn copy_png(app: AppHandle, request: tauri::ipc::Request<'_>) -> CmdResult<()> {
     clipboard::copy_image(&app, &img)
 }
 
+/// Keep an edited picture (PNG bytes) as a new capture: History, and the
+/// clipboard and saved copy as the settings say.
+#[tauri::command]
+async fn save_edit(app: AppHandle, request: tauri::ipc::Request<'_>) -> CmdResult<history::Entry> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected picture bytes".into());
+    };
+    let img = image::load_from_memory(bytes)
+        .map_err(|e| format!("not a picture: {e}"))?
+        .to_rgba8();
+    shoot::keep(&app, img, true)
+}
+
 /// Save PNG bytes to `path` as PNG or JPG (by the path's extension).
 #[tauri::command]
 fn save_png(state: State<'_, AppState>, request: tauri::ipc::Request<'_>) -> CmdResult<()> {
@@ -450,6 +463,7 @@ pub fn run() {
             history_image,
             history_delete,
             copy_png,
+            save_edit,
             save_png,
             reveal_file,
             open_folder,

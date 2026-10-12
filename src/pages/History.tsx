@@ -44,7 +44,15 @@ export function Thumb({
   );
 }
 
-export function History({ selected, onSelect }: { selected: string | null; onSelect: (id: string | null) => void }) {
+export function History({
+  selected,
+  onSelect,
+  onEdit,
+}: {
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+  onEdit: (e: HistoryEntry) => void;
+}) {
   const list = useCaptures();
   const [query, setQuery] = useState("");
   const shown = useMemo(() => {
@@ -64,7 +72,7 @@ export function History({ selected, onSelect }: { selected: string | null; onSel
       </PageHeader>
       {list && list.length === 0 && <Empty Icon={HistoryIcon} title="Nothing here yet" text="Every capture is kept here, newest first." />}
       {list && list.length > 0 && shown.length === 0 && <div className="empty">Nothing matches “{query.trim()}”.</div>}
-      {current && <CaptureView key={current.id} entry={current} onDeleted={() => onSelect(null)} />}
+      {current && <CaptureView key={current.id} entry={current} onDeleted={() => onSelect(null)} onEdit={onEdit} />}
       <div className="thumb-grid">
         {shown.map((e) => (
           <Thumb key={e.id} entry={e} active={e.id === current?.id} onClick={() => onSelect(e.id === selected ? null : e.id)} loader={pictureUrl} />

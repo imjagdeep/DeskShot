@@ -2,14 +2,22 @@ import { useState } from "react";
 import { PageHeader, Empty } from "../components/Common";
 import { CaptureView } from "../components/CaptureView";
 import { AreaIcon, CameraIcon, ScreenIcon, TimerIcon, WindowIcon } from "../components/Icons";
-import { api, type CaptureMode } from "../lib/api";
+import { api, type CaptureMode, type HistoryEntry } from "../lib/api";
 import { pictureUrl, useCaptures, when } from "../lib/captures";
 import { toastError, useAppInfo } from "../lib/store";
 import { Thumb } from "./History";
 
 const DELAYS = [0, 3, 5, 10];
 
-export function Capture({ selected, onSelect }: { selected: string | null; onSelect: (id: string | null) => void }) {
+export function Capture({
+  selected,
+  onSelect,
+  onEdit,
+}: {
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+  onEdit: (e: HistoryEntry) => void;
+}) {
   const info = useAppInfo();
   const list = useCaptures();
   const [delay, setDelay] = useState(0);
@@ -56,7 +64,7 @@ export function Capture({ selected, onSelect }: { selected: string | null; onSel
       {current && (
         <>
           <h2 className="section-title">{current.id === list?.[0]?.id ? "Latest capture" : when(current.created)}</h2>
-          <CaptureView key={current.id} entry={current} onDeleted={() => onSelect(null)} />
+          <CaptureView key={current.id} entry={current} onDeleted={() => onSelect(null)} onEdit={onEdit} />
         </>
       )}
       {list && list.length > 1 && (

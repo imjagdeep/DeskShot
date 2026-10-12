@@ -32,6 +32,7 @@ export function useAppMenus(page: Page, go: (p: Page) => void): MenuDef[] {
 
   return useMemo(() => {
     const shoot = (mode: CaptureMode, delay = 0) => api.startCapture(mode, delay);
+    const editor = (what: "undo" | "redo") => window.dispatchEvent(new CustomEvent("editor-command", { detail: what }));
     const themeItem = (t: Theme, label: string) => ({
       id: `theme-${t}`,
       label,
@@ -62,8 +63,21 @@ export function useAppMenus(page: Page, go: (p: Page) => void): MenuDef[] {
     const edit: MenuDef = {
       label: "Edit",
       items: [
-        { id: "undo", label: "Undo", accel: "Mod+Z", enabled: textFieldFocused, run: () => editCommand("undo") },
-        { id: "redo", label: "Redo", accel: "Mod+Y", native: "redo", hidden: true, run: () => editCommand("redo") },
+        // In the editor these undo drawing; in a text field, typing.
+        {
+          id: "undo",
+          label: "Undo",
+          accel: "Mod+Z",
+          enabled: () => textFieldFocused() || page === "editor",
+          run: () => (textFieldFocused() ? editCommand("undo") : editor("undo")),
+        },
+        {
+          id: "redo",
+          label: "Redo",
+          accel: "Mod+Y",
+          enabled: () => textFieldFocused() || page === "editor",
+          run: () => (textFieldFocused() ? editCommand("redo") : editor("redo")),
+        },
         "-",
         { id: "cut", label: "Cut", accel: "Mod+X", native: "cut", hidden: true, run: () => editCommand("cut") },
         { id: "copy", label: "Copy", accel: "Mod+C", native: "copy", hidden: true, run: () => editCommand("copy") },

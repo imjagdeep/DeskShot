@@ -245,3 +245,9 @@ export const PinIcon = (p: IconProps) => (
     <path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" />
   </Svg>
 );
+export const EditIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M14.5 5.5l4 4L9 19H5v-4z" />
+    <path d="M12.5 7.5l4 4" />
+  </Svg>
+);
