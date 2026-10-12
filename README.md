@@ -4,7 +4,9 @@
 
 <p align="center">Free, offline screenshots for Windows and macOS.<br>No account, no uploads, no tracking: your captures never leave your computer.</p>
 
-> **Status: in development.** No release yet. The first version (0.1.0) is being built.
+**Download:** [latest release](https://github.com/imjagdeep/DeskShot/releases/latest) for Windows and macOS (Apple Silicon and Intel, signed and notarized).
+
+> This is the first version. If something doesn't work as described, please [open an issue](https://github.com/imjagdeep/DeskShot/issues).
 
 ## What it does
 
