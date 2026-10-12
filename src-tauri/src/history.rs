@@ -76,7 +76,12 @@ pub fn encode_png(img: &RgbaImage) -> Result<Vec<u8>, String> {
 pub fn encode_bmp(img: &RgbaImage) -> Result<Vec<u8>, String> {
     let mut out = Vec::with_capacity(img.as_raw().len() + 256);
     image::codecs::bmp::BmpEncoder::new(&mut out)
-        .write_image(img.as_raw(), img.width(), img.height(), image::ExtendedColorType::Rgba8)
+        .write_image(
+            img.as_raw(),
+            img.width(),
+            img.height(),
+            image::ExtendedColorType::Rgba8,
+        )
         .map_err(|e| format!("cannot prepare the picture: {e}"))?;
     Ok(out)
 }
