@@ -133,12 +133,24 @@ fn list_windows() -> Vec<WinInfo> {
             if title.trim().is_empty() || area.w < 48 || area.h < 48 || click_through(w) {
                 return None;
             }
-            let app = w.app_name().unwrap_or_default();
+            let app = app_label(&w.app_name().unwrap_or_default());
             Some((w.z().unwrap_or(0), WinInfo { title, app, area }))
         })
         .collect();
     out.sort_by_key(|a| std::cmp::Reverse(a.0));
     out.into_iter().map(|(_, w)| w).collect()
+}
+
+/// Some apps report a full program path: show just "Notepad".
+fn app_label(name: &str) -> String {
+    if !name.contains(['\\', '/']) {
+        return name.to_string();
+    }
+    std::path::Path::new(&name.replace('\\', "/"))
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(name)
+        .to_string()
 }
 
 /// Windows: a window clicks pass through (`WS_EX_TRANSPARENT`).
@@ -241,6 +253,16 @@ mod tests {
             area: Rect { x, y, w, h },
             image: RgbaImage::new(w * scale, h * scale),
         }
+    }
+
+    #[test]
+    fn app_names_without_paths() {
+        assert_eq!(
+            app_label(r"C:\Program Files\WindowsApps\Notepad\Notepad.exe"),
+            "Notepad"
+        );
+        assert_eq!(app_label("Safari"), "Safari");
+        assert_eq!(app_label("Visual Studio Code"), "Visual Studio Code");
     }
 
     #[test]
