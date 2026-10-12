@@ -938,6 +938,7 @@ dependencies = [
  "tauri-plugin-window-state",
  "tempfile",
  "tracing",
+ "windows",
  "xcap",
 ]
 

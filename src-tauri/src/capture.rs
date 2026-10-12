@@ -128,7 +128,9 @@ fn list_windows() -> Vec<WinInfo> {
                 w: w.width().ok()?,
                 h: w.height().ok()?,
             };
-            if title.trim().is_empty() || area.w < 24 || area.h < 24 {
+            // Tiny helper windows and click-through overlays (cursor
+            // effects, screen recorders) aren't things anyone means to pick.
+            if title.trim().is_empty() || area.w < 48 || area.h < 48 || click_through(w) {
                 return None;
             }
             let app = w.app_name().unwrap_or_default();
@@ -137,6 +139,26 @@ fn list_windows() -> Vec<WinInfo> {
         .collect();
     out.sort_by_key(|a| std::cmp::Reverse(a.0));
     out.into_iter().map(|(_, w)| w).collect()
+}
+
+/// Windows: a window clicks pass through (`WS_EX_TRANSPARENT`).
+#[cfg(windows)]
+fn click_through(w: &xcap::Window) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TRANSPARENT};
+    let Ok(id) = w.id() else {
+        return false;
+    };
+    // xcap's window id is the window handle.
+    let hwnd = HWND(id as usize as *mut core::ffi::c_void);
+    // SAFETY: only reads the window's style; a stale handle just returns 0.
+    let style = unsafe { GetWindowLongPtrW(hwnd, GWL_EXSTYLE) } as u32;
+    style & WS_EX_TRANSPARENT.0 != 0
+}
+
+#[cfg(not(windows))]
+fn click_through(_w: &xcap::Window) -> bool {
+    false
 }
 
 /// The windows on this monitor, mapped into its picture's pixels (topmost first).
