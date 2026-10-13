@@ -3,8 +3,8 @@
 //! the window.
 
 mod account;
-mod card;
 mod capture;
+mod card;
 mod clipboard;
 mod desklab;
 mod history;
@@ -20,7 +20,7 @@ use shoot::Mode;
 use state::{AppState, Inner};
 use std::path::PathBuf;
 use tauri::ipc::Response;
-use tauri::{Emitter, AppHandle, Manager, State, WebviewWindow, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
@@ -487,7 +487,9 @@ pub fn run() {
                     tauri_plugin_window_state::StateFlags::all()
                         - tauri_plugin_window_state::StateFlags::VISIBLE,
                 )
-                .with_filter(|label| !shoot::is_overlay(label) && !pin::is_pin(label) && !card::is_card(label))
+                .with_filter(|label| {
+                    !shoot::is_overlay(label) && !pin::is_pin(label) && !card::is_card(label)
+                })
                 .build(),
         )
         .plugin(

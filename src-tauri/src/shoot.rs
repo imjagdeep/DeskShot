@@ -4,7 +4,7 @@
 
 use crate::capture::{self, Frozen, Rect};
 use crate::history;
-use crate::settings::{Format, AfterCapture};
+use crate::settings::{AfterCapture, Format};
 use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;

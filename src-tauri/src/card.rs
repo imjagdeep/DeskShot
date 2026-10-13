@@ -64,7 +64,9 @@ pub fn show(app: &AppHandle, entry: &history::Entry) -> Result<(), String> {
     if let Some(p) = place {
         b = b.position(p.x as f64, p.y as f64);
     }
-    let w = b.build().map_err(|e| format!("cannot show the card: {e}"))?;
+    let w = b
+        .build()
+        .map_err(|e| format!("cannot show the card: {e}"))?;
     // position() takes logical points; put it exactly where measured.
     if let Some(p) = place {
         let _ = w.set_position(p);
