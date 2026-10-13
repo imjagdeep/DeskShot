@@ -16,7 +16,7 @@ import { History } from "./pages/History";
 import { SettingsPage } from "./pages/Settings";
 import { AccountPage } from "./account/AccountPage";
 import { ShellDialogs } from "./shell/Dialogs";
-import { MenuBar } from "./shell/MenuBar";
+import { TopBar } from "./shell/TopBar";
 import { applySavedZoom } from "./shell/shell";
 
 // The editor (and Konva) load the first time it's opened.
@@ -79,8 +79,13 @@ export default function App() {
       const target = PAGES.find((p) => p.page === e.payload);
       if (target) setPageRaw(target.page);
     });
+    // Edit from the quick-capture card: straight into the editor.
+    const unEdit = listen<string>("edit-capture", (e) => {
+      setEditing(e.payload);
+      setPageRaw("editor");
+    });
     return () => {
-      for (const un of [unNew, unErr, unNav]) void un.then((f) => f());
+      for (const un of [unNew, unErr, unNav, unEdit]) void un.then((f) => f());
     };
   }, []);
 
@@ -119,7 +124,7 @@ export default function App() {
 
   return (
     <div className="app-frame">
-      <MenuBar appName="DeskShot" menus={menus} onError={toastError} />
+      <TopBar appName="DeskShot" logo={logo} title={page === "editor" ? "Edit" : PAGES.find((p) => p.page === page)?.label} menus={menus} onError={toastError} />
       <div className="app">
         <Sidebar page={page} onNavigate={setPage} />
         <main className={page === "editor" ? "content content-editor" : "content"} ref={content}>

@@ -4,7 +4,7 @@
 
 use crate::capture::{self, Frozen, Rect};
 use crate::history;
-use crate::settings::Format;
+use crate::settings::{AfterCapture, Format};
 use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -48,7 +48,9 @@ pub fn start(app: &AppHandle, mode: Mode, delay_secs: u32) {
 fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
     // Our own window shouldn't be in the picture.
     if let Some(w) = app.get_webview_window("main") {
-        if w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false) {
+        let open = w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false);
+        app.state::<AppState>().lock().main_was_open = open;
+        if open {
             let _ = w.hide();
             std::thread::sleep(Duration::from_millis(220));
         }
@@ -198,6 +200,10 @@ pub fn finish(app: &AppHandle, index: usize, rect: Option<Rect>) -> Result<(), S
     let frozen = app.state::<AppState>().lock().frozen.take();
     close_overlays(app);
     let (Some(f), Some(r)) = (frozen, rect) else {
+        // Cancelled: bring the window back if it was open.
+        if std::mem::take(&mut app.state::<AppState>().lock().main_was_open) {
+            crate::tray::show_main(app);
+        }
         return Ok(());
     };
     let shot = f.shots.get(index).ok_or("unknown screen")?;
@@ -269,9 +275,10 @@ pub fn keep(
     if edited {
         return Ok(entry);
     }
-    if settings.open_after_capture {
-        crate::tray::show_main(app);
-    } else {
+    // Captured from the open window: it comes back with the capture.
+    // Quick captures (shortcut, tray) get the card, the window or a note.
+    let from_window = std::mem::take(&mut app.state::<AppState>().lock().main_was_open);
+    let note = || {
         crate::notify(
             app,
             "Captured",
@@ -280,7 +287,17 @@ pub fn keep(
             } else {
                 "Saved."
             },
-        );
+        )
+    };
+    if from_window || settings.after_capture == AfterCapture::Window {
+        crate::tray::show_main(app);
+    } else if settings.after_capture == AfterCapture::Card {
+        if let Err(e) = crate::card::show(app, &entry) {
+            tracing::warn!("quick-capture card: {e}");
+            note();
+        }
+    } else {
+        note();
     }
     Ok(entry)
 }

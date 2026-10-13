@@ -10,6 +10,18 @@ pub enum Format {
     Jpg,
 }
 
+/// What happens after a quick capture (shortcut, Print Screen, tray).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AfterCapture {
+    /// A small card in the screen corner (Copy, Save, Edit, Pin).
+    Card,
+    /// Open the DeskShot window with the capture.
+    Window,
+    /// Only a notification.
+    Notify,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -22,8 +34,9 @@ pub struct Settings {
     pub format: Format,
     /// 1-100, for JPG only.
     pub jpg_quality: u8,
-    /// Bring the DeskShot window up with the new capture.
-    pub open_after_capture: bool,
+    /// After a quick capture. (Replaces the old "open_after_capture"; old
+    /// settings files still load, that field is ignored.)
+    pub after_capture: AfterCapture,
     /// Let the Print Screen key start an area capture (Windows asks the
     /// Snipping Tool first otherwise; see printscreen.rs).
     pub use_print_screen: bool,
@@ -44,7 +57,7 @@ impl Default for Settings {
             save_folder: None,
             format: Format::Png,
             jpg_quality: 90,
-            open_after_capture: true,
+            after_capture: AfterCapture::Card,
             use_print_screen: false,
             took_print_screen: false,
             history_limit: 300,

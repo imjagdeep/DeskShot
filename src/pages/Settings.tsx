@@ -93,13 +93,25 @@ export function SettingsPage() {
               </span>
             </span>
           </label>
-          <label className="check-row">
-            <input type="checkbox" checked={s.open_after_capture} onChange={(e) => void save({ open_after_capture: e.target.checked })} />
+          <div className="setting-line">
             <span>
-              Show it in DeskShot
-              <span className="muted small block">Off: a small notification says it worked, and you stay where you were.</span>
+              After a quick capture
+              <span className="muted small block">Shortcut, Print Screen or the tray. Captures started in this window always come back here.</span>
             </span>
-          </label>
+            <div className="segmented" role="group" aria-label="After a quick capture">
+              {(
+                [
+                  ["card", "Small card"],
+                  ["window", "Open DeskShot"],
+                  ["notify", "Just a note"],
+                ] as const
+              ).map(([v, label]) => (
+                <button key={v} className={s.after_capture === v ? "active" : ""} aria-pressed={s.after_capture === v} onClick={() => void save({ after_capture: v })}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="setting-line">
             <span>Format for saved copies</span>
             <div className="segmented" role="group" aria-label="Format">

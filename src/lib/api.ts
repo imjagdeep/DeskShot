@@ -18,7 +18,8 @@ export interface Settings {
   save_folder: string | null;
   format: "png" | "jpg";
   jpg_quality: number;
-  open_after_capture: boolean;
+  /** After a quick capture (shortcut, Print Screen, tray). */
+  after_capture: "card" | "window" | "notify";
   use_print_screen: boolean;
   took_print_screen: boolean;
   history_limit: number;
@@ -84,6 +85,10 @@ export const api = {
   historySetText: (id: string, text: string) => invoke<void>("history_set_text", { id, text }),
   /** Float a capture on top of every other window. */
   pinCapture: (id: string) => invoke<void>("pin_capture", { id }),
+  /** The quick-capture card: what it shows, close it, open the editor. */
+  cardInfo: () => invoke<HistoryEntry>("card_info"),
+  cardClose: () => invoke<void>("card_close"),
+  cardEdit: (id: string) => invoke<void>("card_edit", { id }),
   /** (in a pin window) which capture it shows */
   pinInfo: () => invoke<{ id: string; width: number; height: number }>("pin_info"),
   /** (in a pin window) new width in screen points; the height follows */

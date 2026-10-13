@@ -157,13 +157,12 @@ export function Overlay() {
       )}
       {!start && (
         <div className="ov-hint">
-          {info.mode === "window" ? "Click a window" : "Drag to select an area, or click a window"} · Enter for the whole screen · Esc to cancel
+          {info.mode === "window" ? "Click a window" : "Drag an area or click a window"} · Enter: whole screen · Esc: cancel
         </div>
       )}
-      {cur && (
+      {/* Kept light: the magnifier only while dragging, when precision matters. */}
+      {cur && start && (
         <>
-          <div className="ov-cross-x" style={{ top: cur.y }} />
-          <div className="ov-cross-y" style={{ left: cur.x }} />
           <div className="ov-mag" style={{ left: magLeft, top: magTop }}>
             <canvas ref={mag} width={MAG_SIZE} height={MAG_SIZE} />
             <div>
