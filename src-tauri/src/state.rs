@@ -19,6 +19,11 @@ pub struct Inner {
     pub mode: Mode,
     /// Open pin windows and the capture each shows.
     pub pins: HashMap<String, PinInfo>,
+    /// The DeskShot window was open when this capture started (it comes
+    /// back afterwards instead of the card).
+    pub main_was_open: bool,
+    /// The capture the quick-capture card shows.
+    pub card: Option<String>,
 }
 
 pub struct AppState(Mutex<Inner>);

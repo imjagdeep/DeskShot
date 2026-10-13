@@ -3,6 +3,7 @@
 //! the window.
 
 mod account;
+mod card;
 mod capture;
 mod clipboard;
 mod desklab;
@@ -19,7 +20,7 @@ use shoot::Mode;
 use state::{AppState, Inner};
 use std::path::PathBuf;
 use tauri::ipc::Response;
-use tauri::{AppHandle, Manager, State, WebviewWindow, WindowEvent};
+use tauri::{Emitter, AppHandle, Manager, State, WebviewWindow, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
@@ -177,6 +178,27 @@ fn history_set_text(state: State<'_, AppState>, id: String, text: String) -> Cmd
 }
 
 /// Float a capture on top of every other window.
+// ---------- the quick-capture card ----------
+
+#[tauri::command]
+fn card_info(app: AppHandle) -> CmdResult<history::Entry> {
+    card::current(&app)
+}
+
+#[tauri::command]
+fn card_close(app: AppHandle) {
+    card::close(&app);
+}
+
+/// Edit: the card goes, the DeskShot window opens with the editor.
+#[tauri::command]
+fn card_edit(app: AppHandle, id: String) -> CmdResult<()> {
+    card::close(&app);
+    tray::show_main(&app);
+    app.emit_to("main", "edit-capture", id)
+        .map_err(|e| format!("cannot open the editor: {e}"))
+}
+
 #[tauri::command]
 fn pin_capture(app: AppHandle, id: String) -> CmdResult<()> {
     pin::open(&app, &id)
@@ -465,7 +487,7 @@ pub fn run() {
                     tauri_plugin_window_state::StateFlags::all()
                         - tauri_plugin_window_state::StateFlags::VISIBLE,
                 )
-                .with_filter(|label| !shoot::is_overlay(label) && !pin::is_pin(label))
+                .with_filter(|label| !shoot::is_overlay(label) && !pin::is_pin(label) && !card::is_card(label))
                 .build(),
         )
         .plugin(
@@ -510,6 +532,8 @@ pub fn run() {
                 frozen: None,
                 mode: Mode::Area,
                 pins: Default::default(),
+                main_was_open: false,
+                card: None,
             }));
             app.manage(account::Account::new("deskshot")?);
             tray::build(app.handle())?;
@@ -556,6 +580,9 @@ pub fn run() {
             history_delete,
             history_set_text,
             pin_capture,
+            card_info,
+            card_close,
+            card_edit,
             pin_info,
             pin_resize,
             copy_png,

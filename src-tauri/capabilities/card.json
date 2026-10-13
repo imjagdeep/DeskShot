@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "card",
+  "description": "Quick-capture card: close itself and use the save dialog; everything else goes through DeskShot's own commands",
+  "windows": [
+    "card"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "dialog:allow-save"
+  ]
+}

@@ -79,8 +79,13 @@ export default function App() {
       const target = PAGES.find((p) => p.page === e.payload);
       if (target) setPageRaw(target.page);
     });
+    // Edit from the quick-capture card: straight into the editor.
+    const unEdit = listen<string>("edit-capture", (e) => {
+      setEditing(e.payload);
+      setPageRaw("editor");
+    });
     return () => {
-      for (const un of [unNew, unErr, unNav]) void un.then((f) => f());
+      for (const un of [unNew, unErr, unNav, unEdit]) void un.then((f) => f());
     };
   }, []);
 
