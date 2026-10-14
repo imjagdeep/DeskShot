@@ -67,7 +67,7 @@ export function History({
       <PageHeader title="History" subtitle={list ? `${list.length} capture${list.length === 1 ? "" : "s"}, newest first` : undefined}>
         <label className="search-box">
           <SearchIcon size={14} />
-          <input value={query} placeholder="Search the words in your captures, or a date" onChange={(e) => setQuery(e.target.value)} aria-label="Search history" />
+          <input value={query} placeholder="Search words or dates" onChange={(e) => setQuery(e.target.value)} aria-label="Search history" />
         </label>
       </PageHeader>
       {list && list.length === 0 && <Empty Icon={HistoryIcon} title="Nothing here yet" text="Every capture is kept here, newest first." />}
