@@ -50,12 +50,12 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
-            "area" => shoot::start(app, Mode::Area, 0),
-            "window" => shoot::start(app, Mode::Window, 0),
-            "screen" => shoot::start(app, Mode::Screen, 0),
-            "delay3" => shoot::start(app, Mode::Area, 3),
-            "delay5" => shoot::start(app, Mode::Area, 5),
-            "delay10" => shoot::start(app, Mode::Area, 10),
+            "area" => shoot::start(app, Mode::Area, 0, false),
+            "window" => shoot::start(app, Mode::Window, 0, false),
+            "screen" => shoot::start(app, Mode::Screen, 0, false),
+            "delay3" => shoot::start(app, Mode::Area, 3, false),
+            "delay5" => shoot::start(app, Mode::Area, 5, false),
+            "delay10" => shoot::start(app, Mode::Area, 10, false),
             "open" => show_main(app),
             "history" | "settings" => {
                 show_main(app);

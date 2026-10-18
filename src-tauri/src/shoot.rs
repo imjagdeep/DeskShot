@@ -35,20 +35,26 @@ pub fn overlay_index(label: &str) -> Option<usize> {
 
 /// Start a capture on a background thread (the shortcut, tray and window all
 /// come here). A capture already on screen is cancelled first.
-pub fn start(app: &AppHandle, mode: Mode, delay_secs: u32) {
-    tracing::info!("capture requested: {mode:?}, delay {delay_secs}s");
+///
+/// `from_window`: started with DeskShot's own Capture buttons. Only then is
+/// the window hidden for the picture and brought back afterwards; the
+/// shortcut and the menu bar leave it alone, like macOS's own screenshots,
+/// and "After a quick capture" decides what shows.
+pub fn start(app: &AppHandle, mode: Mode, delay_secs: u32, from_window: bool) {
+    tracing::info!("capture requested: {mode:?}, delay {delay_secs}s, from window: {from_window}");
     close_overlays(app);
     let app = app.clone();
     std::thread::spawn(move || {
-        if let Err(e) = run(&app, mode, delay_secs) {
+        if let Err(e) = run(&app, mode, delay_secs, from_window) {
             report_error(&app, &e);
         }
     });
 }
 
-fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
-    // Our own window shouldn't be in the picture.
-    if let Some(w) = app.get_webview_window("main") {
+fn run(app: &AppHandle, mode: Mode, delay_secs: u32, from_window: bool) -> Result<(), String> {
+    app.state::<AppState>().lock().main_was_open = false;
+    // Started from our own window: keep it out of the picture.
+    if let Some(w) = app.get_webview_window("main").filter(|_| from_window) {
         let open = w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false);
         app.state::<AppState>().lock().main_was_open = open;
         if open {

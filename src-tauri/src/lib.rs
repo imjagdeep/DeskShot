@@ -131,7 +131,7 @@ fn set_print_screen(app: &AppHandle, s: &mut Settings) -> CmdResult<()> {
 
 #[tauri::command]
 fn start_capture(app: AppHandle, mode: Mode, delay: u32) {
-    shoot::start(&app, mode, delay);
+    shoot::start(&app, mode, delay, true);
 }
 
 fn overlay_of(window: &WebviewWindow) -> CmdResult<usize> {
@@ -506,7 +506,7 @@ pub fn run() {
                     if event.state() == ShortcutState::Pressed
                         && (shortcut == &area_shortcut() || shortcut == &print_screen())
                     {
-                        shoot::start(app, Mode::Area, 0);
+                        shoot::start(app, Mode::Area, 0, false);
                     }
                 })
                 .build(),
