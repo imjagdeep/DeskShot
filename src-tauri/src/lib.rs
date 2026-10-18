@@ -462,6 +462,12 @@ fn release_print_screen_and_exit() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Ignored if a subscriber is already set (tests).
+    let _ = tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_max_level(tracing::Level::INFO)
+        .with_ansi(false)
+        .try_init();
     #[cfg(windows)]
     if std::env::args().any(|a| a == "--release-print-screen") {
         release_print_screen_and_exit();

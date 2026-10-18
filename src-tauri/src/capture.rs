@@ -111,6 +111,7 @@ fn capture_monitor(m: &xcap::Monitor) -> Result<image::RgbaImage, String> {
         let scale = m.scale_factor().unwrap_or(1.0) as f64;
         let w = (m.width().map_err(|e| err("screen size", e))? as f64 * scale).round() as u32;
         let h = (m.height().map_err(|e| err("screen size", e))? as f64 * scale).round() as u32;
+        tracing::info!("ScreenCaptureKit: display {id}, {w}x{h}");
         match crate::sck::capture_display(id, w, h) {
             Ok(img) => return Ok(img),
             Err(e) => {

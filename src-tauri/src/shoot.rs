@@ -36,6 +36,7 @@ pub fn overlay_index(label: &str) -> Option<usize> {
 /// Start a capture on a background thread (the shortcut, tray and window all
 /// come here). A capture already on screen is cancelled first.
 pub fn start(app: &AppHandle, mode: Mode, delay_secs: u32) {
+    tracing::info!("capture requested: {mode:?}, delay {delay_secs}s");
     close_overlays(app);
     let app = app.clone();
     std::thread::spawn(move || {
@@ -60,6 +61,14 @@ fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
         std::thread::sleep(Duration::from_secs(delay_secs.min(30) as u64));
     }
     let frozen = capture::grab_all()?;
+    tracing::info!(
+        "screens captured: {:?}",
+        frozen
+            .shots
+            .iter()
+            .map(|s| (s.image.width(), s.image.height()))
+            .collect::<Vec<_>>()
+    );
     if mode == Mode::Screen {
         let i = cursor_shot(app, &frozen);
         let shot = &frozen.shots[i];
@@ -84,6 +93,7 @@ fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
         st.mode = mode;
     }
     for (i, place) in places.into_iter().enumerate() {
+        tracing::info!("overlay {i} at {place:?}");
         open_overlay(app, i, place).map_err(|e| format!("cannot show the capture screen: {e}"))?;
     }
     Ok(())
