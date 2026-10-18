@@ -83,7 +83,7 @@ fn find_display(display_id: u32) -> Result<Retained<SCDisplay>, String> {
             let _ = tx.send(result);
         },
     );
-    unsafe { SCShareableContent::getShareableContentWithCompletionHandler(&*handler) };
+    unsafe { SCShareableContent::getShareableContentWithCompletionHandler(&handler) };
     rx.recv_timeout(WAIT)
         .map_err(|_| "macOS didn't list the screens in time".to_string())?
 }
@@ -112,7 +112,7 @@ fn to_rgba(img: &CGImage) -> Result<RgbaImage, String> {
     for row in data.chunks_exact(bytes_per_row).take(height) {
         buffer.extend_from_slice(&row[..width * 4]);
     }
-    for bgra in buffer.chunks_exact_mut(4) {
+    for bgra in buffer.as_chunks_mut::<4>().0 {
         bgra.swap(0, 2);
     }
     RgbaImage::from_raw(width as u32, height as u32, buffer)
