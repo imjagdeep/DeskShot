@@ -564,9 +564,7 @@ pub fn run() {
             tray::build(app.handle())?;
 
             // Started with the computer: stay in the tray.
-            if std::env::args().any(|a| a == "--background") {
-                tray::set_in_dock(app.handle(), false);
-            } else {
+            if !std::env::args().any(|a| a == "--background") {
                 tray::show_main(app.handle());
             }
             Ok(())
@@ -577,7 +575,6 @@ pub fn run() {
                 if window.label() == "main" {
                     api.prevent_close();
                     let _ = window.hide();
-                    tray::set_in_dock(window.app_handle(), false);
                 }
             }
             // A closed pin forgets its capture.
