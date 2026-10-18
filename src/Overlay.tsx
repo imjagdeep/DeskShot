@@ -39,8 +39,10 @@ export function Overlay() {
     (async () => {
       try {
         const [i, png] = await Promise.all([api.overlayInfo(), api.overlayImage()]);
-        // (an uncompressed bitmap: nothing to encode, so the overlay comes up fast)
-        made = URL.createObjectURL(new Blob([png], { type: "image/bmp" }));
+        // A BMP on Windows (nothing to encode, so it comes up fast), a PNG on
+        // macOS (WebKit doesn't load the big 32-bit BMP).
+        const isPng = png[0] === 0x89 && png[1] === 0x50;
+        made = URL.createObjectURL(new Blob([png], { type: isPng ? "image/png" : "image/bmp" }));
         setInfo(i);
         setUrl(made);
       } catch (e) {
@@ -133,6 +135,12 @@ export function Overlay() {
         alt=""
         draggable={false}
         onLoad={() => {
+          const w = getCurrentWindow();
+          void w.show().then(() => w.setFocus());
+        }}
+        onError={() => {
+          // Never leave an invisible overlay holding the capture: show why.
+          setError("this computer couldn't display the screen picture");
           const w = getCurrentWindow();
           void w.show().then(() => w.setFocus());
         }}

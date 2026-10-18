@@ -146,7 +146,7 @@ fn overlay_info(app: AppHandle, window: WebviewWindow) -> CmdResult<shoot::Overl
 /// The frozen picture of this overlay's monitor (BMP bytes, sent raw).
 #[tauri::command]
 fn overlay_image(app: AppHandle, window: WebviewWindow) -> CmdResult<Response> {
-    Ok(Response::new(shoot::overlay_bmp(
+    Ok(Response::new(shoot::overlay_picture(
         &app,
         overlay_of(&window)?,
     )?))
