@@ -90,9 +90,7 @@ pub fn grab_all() -> Result<Frozen, String> {
             w: m.width().map_err(|e| err("screen size", e))?,
             h: m.height().map_err(|e| err("screen size", e))?,
         };
-        let image = m
-            .capture_image()
-            .map_err(|e| err("cannot capture the screen", e))?;
+        let image = capture_monitor(&m)?;
         shots.push(Shot { area, image });
     }
     if shots.is_empty() {
@@ -102,6 +100,28 @@ pub fn grab_all() -> Result<Frozen, String> {
         shots,
         windows: list_windows(),
     })
+}
+
+/// One monitor's picture. macOS 14+: ScreenCaptureKit (xcap's older API
+/// returns nothing on macOS 27); xcap otherwise or if that fails.
+fn capture_monitor(m: &xcap::Monitor) -> Result<image::RgbaImage, String> {
+    #[cfg(target_os = "macos")]
+    if crate::sck::available() {
+        let id = m.id().map_err(|e| err("screen id", e))?;
+        let scale = m.scale_factor().unwrap_or(1.0) as f64;
+        let w = (m.width().map_err(|e| err("screen size", e))? as f64 * scale).round() as u32;
+        let h = (m.height().map_err(|e| err("screen size", e))? as f64 * scale).round() as u32;
+        tracing::info!("ScreenCaptureKit: display {id}, {w}x{h}");
+        match crate::sck::capture_display(id, w, h) {
+            Ok(img) => return Ok(img),
+            Err(e) => {
+                tracing::warn!("ScreenCaptureKit: {e}; trying the older way");
+                return m.capture_image().map_err(|_| e);
+            }
+        }
+    }
+    m.capture_image()
+        .map_err(|e| err("cannot capture the screen", e))
 }
 
 /// Visible, titled windows of other apps. A window that can't be read is

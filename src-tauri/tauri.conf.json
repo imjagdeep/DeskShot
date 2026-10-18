@@ -56,7 +56,7 @@
       }
     },
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "12.3"
     },
     "createUpdaterArtifacts": true
   },

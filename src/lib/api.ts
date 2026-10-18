@@ -5,8 +5,10 @@ import { invoke } from "@tauri-apps/api/core";
 export interface AppInfo {
   version: string;
   platform: string;
-  /** "Ctrl+Shift+2" (or Cmd on a Mac) */
+  /** Snip shortcut as text, "Ctrl+Shift+2" (or Cmd on a Mac); "" when off */
   shortcut: string;
+  /** Full screen shortcut, same way */
+  screen_shortcut: string;
   default_folder: string | null;
   /** Windows: the Snipping Tool owns Print Screen right now. */
   snipping_owns_print_screen: boolean;
@@ -24,6 +26,10 @@ export interface Settings {
   took_print_screen: boolean;
   history_limit: number;
   autostart_applied: boolean;
+  /** null = default (Ctrl/Cmd+Shift+2), "" = off */
+  snip_shortcut: string | null;
+  /** null = default (Ctrl/Cmd+Shift+1), "" = off */
+  screen_shortcut: string | null;
 }
 
 export interface HistoryEntry {

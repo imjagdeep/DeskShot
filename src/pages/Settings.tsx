@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { PageHeader } from "../components/Common";
 import { DeskLabTools } from "../components/DeskLab";
+import { ShortcutField } from "../components/ShortcutField";
 import { api, type Settings } from "../lib/api";
 import { refreshAppInfo, setAutoUpdate, setTheme, toastError, useAppInfo, useAutoUpdate, useTheme, type Theme } from "../lib/store";
 import { checkAndDownload, installNow, useUpdate } from "../lib/updates";
@@ -27,7 +28,7 @@ export function SettingsPage() {
     if (!s) return;
     try {
       setS(await api.saveSettings({ ...s, ...patch }));
-      if ("use_print_screen" in patch) void refreshAppInfo();
+      if ("use_print_screen" in patch || "snip_shortcut" in patch || "screen_shortcut" in patch) void refreshAppInfo();
     } catch (e) {
       toastError(e);
     }
@@ -148,9 +149,22 @@ export function SettingsPage() {
       {s && (
         <div className="card">
           <h2>Keys and start-up</h2>
-          <div className="setting-line">
-            <span>Capture an area from anywhere</span>
-            <kbd>{info?.shortcut ?? "Ctrl+Shift+2"}</kbd>
+          <div className="shortcut-list">
+            <ShortcutField
+              label="Snip"
+              value={s.snip_shortcut}
+              fallback="CommandOrControl+Shift+Digit2"
+              mac={info?.platform === "macos"}
+              onSave={(v) => save({ snip_shortcut: v }).then(() => true)}
+            />
+            <ShortcutField
+              label="Full screen"
+              value={s.screen_shortcut}
+              fallback="CommandOrControl+Shift+Digit1"
+              mac={info?.platform === "macos"}
+              onSave={(v) => save({ screen_shortcut: v }).then(() => true)}
+            />
+            <div className="muted small">Work anywhere, even when DeskShot is only in the {windows ? "tray" : "menu bar"}. Keys the system or another app already uses can't be taken.</div>
           </div>
           {windows && (
             <label className="check-row">

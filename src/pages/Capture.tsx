@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PageHeader, Empty } from "../components/Common";
 import { CaptureView } from "../components/CaptureView";
-import { AreaIcon, CameraIcon, ScreenIcon, TimerIcon, WindowIcon } from "../components/Icons";
+import { AreaIcon, CameraIcon, ScreenIcon, TimerIcon } from "../components/Icons";
 import { api, type CaptureMode, type HistoryEntry } from "../lib/api";
 import { pictureUrl, useCaptures, when } from "../lib/captures";
 import { toastError, useAppInfo } from "../lib/store";
@@ -26,23 +26,19 @@ export function Capture({
 
   return (
     <div className="page page-wide">
-      <PageHeader title="Capture" subtitle={info ? `Press ${info.shortcut} anywhere to capture an area.` : undefined} />
+      <PageHeader title="Capture" subtitle={info?.shortcut ? `Press ${info.shortcut} anywhere to snip.` : undefined} />
       <div className="capture-tiles">
         <button className="capture-tile" onClick={() => start("area")}>
           <AreaIcon size={30} />
-          <strong>Area</strong>
-          <span className="muted small">Drag a rectangle, or click a window</span>
-          {info && <kbd>{info.shortcut}</kbd>}
-        </button>
-        <button className="capture-tile" onClick={() => start("window")}>
-          <WindowIcon size={30} />
-          <strong>Window</strong>
-          <span className="muted small">Click the window you want</span>
+          <strong>Snip</strong>
+          <span className="muted small">Drag a box, or click a window to take just that window</span>
+          {info?.shortcut && <kbd>{info.shortcut}</kbd>}
         </button>
         <button className="capture-tile" onClick={() => start("screen")}>
           <ScreenIcon size={30} />
           <strong>Full screen</strong>
-          <span className="muted small">The screen your mouse is on</span>
+          <span className="muted small">The whole screen your mouse is on</span>
+          {info?.screen_shortcut && <kbd>{info.screen_shortcut}</kbd>}
         </button>
       </div>
       <div className="delay-row">

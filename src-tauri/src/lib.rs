@@ -8,8 +8,11 @@ mod card;
 mod clipboard;
 mod desklab;
 mod history;
+mod keys;
 mod pin;
 mod printscreen;
+#[cfg(target_os = "macos")]
+mod sck;
 mod settings;
 mod shoot;
 mod state;
@@ -21,27 +24,10 @@ use state::{AppState, Inner};
 use std::path::PathBuf;
 use tauri::ipc::Response;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow, WindowEvent};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Shortcut, ShortcutState};
 use tauri_plugin_opener::OpenerExt;
 
 type CmdResult<T> = Result<T, String>;
-
-/// Cmd on macOS, Ctrl elsewhere.
-#[cfg(target_os = "macos")]
-const PRIMARY: Modifiers = Modifiers::SUPER;
-#[cfg(not(target_os = "macos"))]
-const PRIMARY: Modifiers = Modifiers::CONTROL;
-
-/// Shown next to "Capture area" in the tray menu.
-#[cfg(target_os = "macos")]
-pub const SHORTCUT_TEXT: &str = "Cmd+Shift+2";
-#[cfg(not(target_os = "macos"))]
-pub const SHORTCUT_TEXT: &str = "Ctrl+Shift+2";
-
-/// Ctrl/Cmd + Shift + 2: capture an area.
-fn area_shortcut() -> Shortcut {
-    Shortcut::new(Some(PRIMARY | Modifiers::SHIFT), Code::Digit2)
-}
 
 fn print_screen() -> Shortcut {
     Shortcut::new(None, Code::PrintScreen)
@@ -59,7 +45,10 @@ pub fn notify(app: &AppHandle, title: &str, body: &str) {
 struct AppInfo {
     version: String,
     platform: &'static str,
-    shortcut: &'static str,
+    /// The Snip shortcut as text ("Cmd+Shift+2"), "" when turned off.
+    shortcut: String,
+    /// The Full screen shortcut, same way.
+    screen_shortcut: String,
     /// Where captures are saved when no folder is chosen.
     default_folder: Option<PathBuf>,
     /// Windows: the Snipping Tool owns Print Screen right now.
@@ -68,10 +57,19 @@ struct AppInfo {
 
 #[tauri::command]
 fn app_info(app: AppHandle) -> AppInfo {
+    let (snip, screen) = {
+        let state = app.state::<AppState>();
+        let st = state.lock();
+        (
+            st.settings.snip_shortcut.clone(),
+            st.settings.screen_shortcut.clone(),
+        )
+    };
     AppInfo {
         version: app.package_info().version.to_string(),
         platform: std::env::consts::OS,
-        shortcut: SHORTCUT_TEXT,
+        shortcut: keys::label(snip.as_deref().unwrap_or(keys::DEFAULT_SNIP)),
+        screen_shortcut: keys::label(screen.as_deref().unwrap_or(keys::DEFAULT_SCREEN)),
         default_folder: shoot::default_folder(&app).ok(),
         snipping_owns_print_screen: printscreen::snipping_owns_key(),
     }
@@ -95,6 +93,18 @@ fn save_settings(
     };
     // The app decides this one, not the page.
     next.took_print_screen = before.took_print_screen;
+    // A changed shortcut is registered first; taken keys are refused here.
+    {
+        let k = app.state::<keys::Keys>();
+        if next.snip_shortcut != before.snip_shortcut {
+            let sc = keys::parse(next.snip_shortcut.as_deref(), keys::DEFAULT_SNIP)?;
+            keys::set(&app, &k, keys::Action::Snip, sc)?;
+        }
+        if next.screen_shortcut != before.screen_shortcut {
+            let sc = keys::parse(next.screen_shortcut.as_deref(), keys::DEFAULT_SCREEN)?;
+            keys::set(&app, &k, keys::Action::Screen, sc)?;
+        }
+    }
     if next.use_print_screen != before.use_print_screen {
         set_print_screen(&app, &mut next)?;
     }
@@ -129,7 +139,7 @@ fn set_print_screen(app: &AppHandle, s: &mut Settings) -> CmdResult<()> {
 
 #[tauri::command]
 fn start_capture(app: AppHandle, mode: Mode, delay: u32) {
-    shoot::start(&app, mode, delay);
+    shoot::start(&app, mode, delay, true);
 }
 
 fn overlay_of(window: &WebviewWindow) -> CmdResult<usize> {
@@ -144,7 +154,7 @@ fn overlay_info(app: AppHandle, window: WebviewWindow) -> CmdResult<shoot::Overl
 /// The frozen picture of this overlay's monitor (BMP bytes, sent raw).
 #[tauri::command]
 fn overlay_image(app: AppHandle, window: WebviewWindow) -> CmdResult<Response> {
-    Ok(Response::new(shoot::overlay_bmp(
+    Ok(Response::new(shoot::overlay_picture(
         &app,
         overlay_of(&window)?,
     )?))
@@ -460,6 +470,12 @@ fn release_print_screen_and_exit() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Ignored if a subscriber is already set (tests).
+    let _ = tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_max_level(tracing::Level::INFO)
+        .with_ansi(false)
+        .try_init();
     #[cfg(windows)]
     if std::env::args().any(|a| a == "--release-print-screen") {
         release_print_screen_and_exit();
@@ -495,10 +511,17 @@ pub fn run() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
-                    if event.state() == ShortcutState::Pressed
-                        && (shortcut == &area_shortcut() || shortcut == &print_screen())
-                    {
-                        shoot::start(app, Mode::Area, 0);
+                    if event.state() != ShortcutState::Pressed {
+                        return;
+                    }
+                    if shortcut == &print_screen() {
+                        shoot::start(app, Mode::Area, 0, false);
+                        return;
+                    }
+                    match app.state::<keys::Keys>().action_of(shortcut) {
+                        Some(keys::Action::Snip) => shoot::start(app, Mode::Area, 0, false),
+                        Some(keys::Action::Screen) => shoot::start(app, Mode::Screen, 0, false),
+                        None => {}
                     }
                 })
                 .build(),
@@ -516,11 +539,11 @@ pub fn run() {
                 tracing::warn!("{e}");
             }
 
+            // The user's Snip and Full screen keys (keys.rs); one another
+            // app owns only costs that shortcut.
+            app.manage(keys::Keys::default());
+            keys::register_from_settings(app.handle(), &app.state::<keys::Keys>(), &settings);
             let gs = app.global_shortcut();
-            if let Err(e) = gs.register(area_shortcut()) {
-                // Another app owns the key: the tray and window still work.
-                tracing::warn!("could not register {SHORTCUT_TEXT}: {e}");
-            }
             if settings.use_print_screen {
                 if let Err(e) = gs.register(print_screen()) {
                     tracing::warn!("could not register Print Screen: {e}");

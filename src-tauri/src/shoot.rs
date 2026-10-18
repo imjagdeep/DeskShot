@@ -35,19 +35,26 @@ pub fn overlay_index(label: &str) -> Option<usize> {
 
 /// Start a capture on a background thread (the shortcut, tray and window all
 /// come here). A capture already on screen is cancelled first.
-pub fn start(app: &AppHandle, mode: Mode, delay_secs: u32) {
+///
+/// `from_window`: started with DeskShot's own Capture buttons. Only then is
+/// the window hidden for the picture and brought back afterwards; the
+/// shortcut and the menu bar leave it alone, like macOS's own screenshots,
+/// and "After a quick capture" decides what shows.
+pub fn start(app: &AppHandle, mode: Mode, delay_secs: u32, from_window: bool) {
+    tracing::info!("capture requested: {mode:?}, delay {delay_secs}s, from window: {from_window}");
     close_overlays(app);
     let app = app.clone();
     std::thread::spawn(move || {
-        if let Err(e) = run(&app, mode, delay_secs) {
+        if let Err(e) = run(&app, mode, delay_secs, from_window) {
             report_error(&app, &e);
         }
     });
 }
 
-fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
-    // Our own window shouldn't be in the picture.
-    if let Some(w) = app.get_webview_window("main") {
+fn run(app: &AppHandle, mode: Mode, delay_secs: u32, from_window: bool) -> Result<(), String> {
+    app.state::<AppState>().lock().main_was_open = false;
+    // Started from our own window: keep it out of the picture.
+    if let Some(w) = app.get_webview_window("main").filter(|_| from_window) {
         let open = w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false);
         app.state::<AppState>().lock().main_was_open = open;
         if open {
@@ -60,6 +67,14 @@ fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
         std::thread::sleep(Duration::from_secs(delay_secs.min(30) as u64));
     }
     let frozen = capture::grab_all()?;
+    tracing::info!(
+        "screens captured: {:?}",
+        frozen
+            .shots
+            .iter()
+            .map(|s| (s.image.width(), s.image.height()))
+            .collect::<Vec<_>>()
+    );
     if mode == Mode::Screen {
         let i = cursor_shot(app, &frozen);
         let shot = &frozen.shots[i];
@@ -84,6 +99,7 @@ fn run(app: &AppHandle, mode: Mode, delay_secs: u32) -> Result<(), String> {
         st.mode = mode;
     }
     for (i, place) in places.into_iter().enumerate() {
+        tracing::info!("overlay {i} at {place:?}");
         open_overlay(app, i, place).map_err(|e| format!("cannot show the capture screen: {e}"))?;
     }
     Ok(())
@@ -151,7 +167,31 @@ fn open_overlay(
     } else {
         w.maximize()?;
     }
+    #[cfg(target_os = "macos")]
+    above_menu_bar(app, &w);
     Ok(())
+}
+
+/// macOS: "always on top" is only the floating level, so the menu bar (and
+/// the notch area) stayed on top of the overlay. Lift it to the screen-saver
+/// level, like the system's own ⌘⇧4, on every Space. AppKit calls belong on
+/// the main thread.
+#[cfg(target_os = "macos")]
+fn above_menu_bar(app: &AppHandle, w: &tauri::WebviewWindow) {
+    let w = w.clone();
+    let done = app.run_on_main_thread(move || {
+        let Ok(ptr) = w.ns_window() else { return };
+        let win = ptr.cast::<objc2::runtime::AnyObject>();
+        // NSScreenSaverWindowLevel = 1000; collection behaviour:
+        // canJoinAllSpaces (1) | stationary (16) | fullScreenAuxiliary (256).
+        unsafe {
+            let _: () = objc2::msg_send![win, setLevel: 1000isize];
+            let _: () = objc2::msg_send![win, setCollectionBehavior: 273usize];
+        }
+    });
+    if let Err(e) = done {
+        tracing::warn!("cannot raise the capture screen: {e}");
+    }
 }
 
 pub fn close_overlays(app: &AppHandle) {
@@ -185,14 +225,20 @@ pub fn overlay_info(app: &AppHandle, index: usize) -> Result<OverlayInfo, String
     })
 }
 
-/// The frozen picture for the overlay to show, as an uncompressed BMP: a 4K
-/// PNG took most of a second to encode, a bitmap costs almost nothing.
-pub fn overlay_bmp(app: &AppHandle, index: usize) -> Result<Vec<u8>, String> {
+/// The frozen picture for the overlay to show. Windows: an uncompressed BMP
+/// (a 4K PNG took most of a second to encode, a bitmap costs almost
+/// nothing). macOS: a fast PNG, because WebKit never finished loading the
+/// 32-bit BMP of a Retina screen, so the overlay stayed invisible.
+pub fn overlay_picture(app: &AppHandle, index: usize) -> Result<Vec<u8>, String> {
     let state = app.state::<AppState>();
     let st = state.lock();
     let f = st.frozen.as_ref().ok_or("no capture in progress")?;
     let shot = f.shots.get(index).ok_or("unknown screen")?;
-    history::encode_bmp(&shot.image)
+    if cfg!(target_os = "macos") {
+        history::encode_png(&shot.image)
+    } else {
+        history::encode_bmp(&shot.image)
+    }
 }
 
 /// The overlay is done: a rectangle in that monitor's picture, or None to cancel.

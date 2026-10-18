@@ -29,7 +29,7 @@ export function Sidebar({ page, onNavigate }: { page: Page; onNavigate: (p: Page
     if (!g) groups.push((g = { title: p.group, items: [] }));
     g.items.push({ page: p.page, label: p.label, Icon: ICONS[p.page] });
   }
-  const ready = info ? `Ready · ${info.shortcut}` : "…";
+  const ready = !info ? "…" : info.shortcut ? `Ready · ${info.shortcut}` : "Ready";
   return (
     <SideNav
       appName="DeskShot"
@@ -37,7 +37,7 @@ export function Sidebar({ page, onNavigate }: { page: Page; onNavigate: (p: Page
       groups={groups}
       page={page}
       onNavigate={onNavigate}
-      footTitle={info ? `Press ${info.shortcut} anywhere to capture an area` : undefined}
+      footTitle={info?.shortcut ? `Press ${info.shortcut} anywhere to snip` : undefined}
       foot={
         <>
           <span className={info ? "dot on" : "dot"} />
