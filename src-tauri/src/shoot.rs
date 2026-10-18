@@ -161,14 +161,31 @@ fn open_overlay(
     // The page shows the window once the frozen picture is drawn.
     .visible(false)
     .build()?;
-    if let Some((pos, size)) = place {
-        w.set_position(pos)?;
-        w.set_size(size)?;
-    } else {
-        w.maximize()?;
-    }
+    // macOS: the frame is set in one go on the main thread (tao's own
+    // position/size calls are deferred and left the picture shifted down by
+    // the menu bar's height).
     #[cfg(target_os = "macos")]
-    above_menu_bar(app, &w);
+    {
+        let scale = place
+            .and_then(|(pos, _)| {
+                app.available_monitors()
+                    .ok()?
+                    .into_iter()
+                    .find(|m| *m.position() == pos)
+                    .map(|m| m.scale_factor())
+            })
+            .unwrap_or(1.0);
+        above_menu_bar(app, &w, place, scale);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some((pos, size)) = place {
+            w.set_position(pos)?;
+            w.set_size(size)?;
+        } else {
+            w.maximize()?;
+        }
+    }
     Ok(())
 }
 
@@ -177,16 +194,43 @@ fn open_overlay(
 /// level, like the system's own ⌘⇧4, on every Space. AppKit calls belong on
 /// the main thread.
 #[cfg(target_os = "macos")]
-fn above_menu_bar(app: &AppHandle, w: &tauri::WebviewWindow) {
+fn above_menu_bar(
+    app: &AppHandle,
+    w: &tauri::WebviewWindow,
+    place: Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>,
+    scale: f64,
+) {
+    use objc2::runtime::AnyObject;
+    use objc2_foundation::{NSPoint, NSRect, NSSize};
     let w = w.clone();
     let done = app.run_on_main_thread(move || {
         let Ok(ptr) = w.ns_window() else { return };
-        let win = ptr.cast::<objc2::runtime::AnyObject>();
-        // NSScreenSaverWindowLevel = 1000; collection behaviour:
-        // canJoinAllSpaces (1) | stationary (16) | fullScreenAuxiliary (256).
+        let win = ptr.cast::<AnyObject>();
         unsafe {
+            // NSScreenSaverWindowLevel = 1000; collection behaviour:
+            // canJoinAllSpaces (1) | stationary (16) | fullScreenAuxiliary (256).
             let _: () = objc2::msg_send![win, setLevel: 1000isize];
             let _: () = objc2::msg_send![win, setCollectionBehavior: 273usize];
+            // The monitor's rectangle in points, Cocoa style (origin at the
+            // bottom-left of the main screen, y going up).
+            let screens: *mut AnyObject = objc2::msg_send![objc2::class!(NSScreen), screens];
+            let main: *mut AnyObject = objc2::msg_send![screens, firstObject];
+            if main.is_null() {
+                return;
+            }
+            let main_frame: NSRect = objc2::msg_send![main, frame];
+            let frame = match place {
+                Some((pos, size)) => {
+                    let (x, y) = (pos.x as f64 / scale, pos.y as f64 / scale);
+                    let (wd, ht) = (size.width as f64 / scale, size.height as f64 / scale);
+                    NSRect::new(
+                        NSPoint::new(x, main_frame.size.height - y - ht),
+                        NSSize::new(wd, ht),
+                    )
+                }
+                None => main_frame,
+            };
+            let _: () = objc2::msg_send![win, setFrame: frame, display: true];
         }
     });
     if let Err(e) = done {
