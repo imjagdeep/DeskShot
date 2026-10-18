@@ -47,6 +47,11 @@ pub struct Settings {
     pub history_limit: u32,
     /// Set after the first start, when "start with the computer" was offered.
     pub autostart_applied: bool,
+    /// Key combination for Snip, e.g. "Control+Shift+Digit2".
+    /// None = the default (Ctrl/Cmd+Shift+2), "" = turned off.
+    pub snip_shortcut: Option<String>,
+    /// Key combination for Full screen. None = Ctrl/Cmd+Shift+1, "" = off.
+    pub screen_shortcut: Option<String>,
 }
 
 impl Default for Settings {
@@ -62,6 +67,8 @@ impl Default for Settings {
             took_print_screen: false,
             history_limit: 300,
             autostart_applied: false,
+            snip_shortcut: None,
+            screen_shortcut: None,
         }
     }
 }

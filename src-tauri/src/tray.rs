@@ -6,18 +6,12 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Emitter, Manager};
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
-    let area = MenuItem::with_id(
-        app,
-        "area",
-        "Capture area",
-        true,
-        Some(crate::SHORTCUT_TEXT),
-    )?;
-    let window = MenuItem::with_id(app, "window", "Capture window", true, None::<&str>)?;
-    let screen = MenuItem::with_id(app, "screen", "Capture full screen", true, None::<&str>)?;
+    // Shortcuts are the user's choice (Settings), so none are printed here.
+    let area = MenuItem::with_id(app, "area", "Snip", true, None::<&str>)?;
+    let screen = MenuItem::with_id(app, "screen", "Full screen", true, None::<&str>)?;
     let delay = Submenu::with_items(
         app,
-        "Capture area after…",
+        "Snip after…",
         true,
         &[
             &MenuItem::with_id(app, "delay3", "3 seconds", true, None::<&str>)?,
@@ -33,7 +27,6 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         app,
         &[
             &area,
-            &window,
             &screen,
             &delay,
             &PredefinedMenuItem::separator(app)?,
@@ -51,7 +44,6 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "area" => shoot::start(app, Mode::Area, 0, false),
-            "window" => shoot::start(app, Mode::Window, 0, false),
             "screen" => shoot::start(app, Mode::Screen, 0, false),
             "delay3" => shoot::start(app, Mode::Area, 3, false),
             "delay5" => shoot::start(app, Mode::Area, 5, false),

@@ -167,7 +167,31 @@ fn open_overlay(
     } else {
         w.maximize()?;
     }
+    #[cfg(target_os = "macos")]
+    above_menu_bar(app, &w);
     Ok(())
+}
+
+/// macOS: "always on top" is only the floating level, so the menu bar (and
+/// the notch area) stayed on top of the overlay. Lift it to the screen-saver
+/// level, like the system's own ⌘⇧4, on every Space. AppKit calls belong on
+/// the main thread.
+#[cfg(target_os = "macos")]
+fn above_menu_bar(app: &AppHandle, w: &tauri::WebviewWindow) {
+    let w = w.clone();
+    let done = app.run_on_main_thread(move || {
+        let Ok(ptr) = w.ns_window() else { return };
+        let win = ptr.cast::<objc2::runtime::AnyObject>();
+        // NSScreenSaverWindowLevel = 1000; collection behaviour:
+        // canJoinAllSpaces (1) | stationary (16) | fullScreenAuxiliary (256).
+        unsafe {
+            let _: () = objc2::msg_send![win, setLevel: 1000isize];
+            let _: () = objc2::msg_send![win, setCollectionBehavior: 273usize];
+        }
+    });
+    if let Err(e) = done {
+        tracing::warn!("cannot raise the capture screen: {e}");
+    }
 }
 
 pub fn close_overlays(app: &AppHandle) {

@@ -108,11 +108,10 @@ export function useAppMenus(page: Page, go: (p: Page) => void): MenuDef[] {
       label: "Capture",
       items: [
         // The global shortcut works everywhere; Shift+A etc. only in this window.
-        { id: "cap-area", label: "Area", accel: "Mod+Shift+A", run: () => shoot("area") },
-        { id: "cap-window", label: "Window", accel: "Mod+Shift+W", run: () => shoot("window") },
+        { id: "cap-area", label: "Snip", accel: "Mod+Shift+A", run: () => shoot("area") },
         { id: "cap-screen", label: "Full screen", accel: "Mod+Shift+F", run: () => shoot("screen") },
         {
-          label: "Area after a delay",
+          label: "Snip after a delay",
           items: [3, 5, 10].map((d) => ({ id: `cap-delay-${d}`, label: `${d} seconds`, run: () => shoot("area", d) })),
         },
       ],

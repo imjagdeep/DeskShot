@@ -12,7 +12,13 @@
 .search-box input:focus { box-shadow: none; }
 
 /* ---------- Capture page ---------- */
-.capture-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.capture-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+/* Shortcut recorder rows (ShortcutField, same as DeskZero). */
+.shortcut-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 4px; }
+.shortcut-list .shortcut-row { display: grid; grid-template-columns: minmax(150px, 1fr) auto auto; align-items: center; gap: 12px; min-height: 30px; }
+.shortcut-keys { display: flex; align-items: center; gap: 4px; justify-self: start; }
+.shortcut-keys > span { display: inline-flex; align-items: center; gap: 4px; }
+.shortcut-actions { display: flex; gap: 2px; justify-self: end; }
 .capture-tile {
   height: auto;
   display: flex;
