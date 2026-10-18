@@ -10,6 +10,8 @@ mod desklab;
 mod history;
 mod pin;
 mod printscreen;
+#[cfg(target_os = "macos")]
+mod sck;
 mod settings;
 mod shoot;
 mod state;

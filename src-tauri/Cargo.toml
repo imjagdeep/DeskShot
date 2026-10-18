@@ -38,6 +38,15 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 keyring = "4"
 gethostname = "1"
 
+# macOS 14+: screen pictures through ScreenCaptureKit (sck.rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = "0.3"
+objc2-core-foundation = "0.3"
+objc2-core-graphics = "0.3"
+objc2-screen-capture-kit = "0.3"
+block2 = "0.6"
+
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
 
