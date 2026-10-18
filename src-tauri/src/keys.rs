@@ -182,7 +182,10 @@ mod tests {
             label(DEFAULT_SNIP),
             if mac { "Cmd+Shift+2" } else { "Ctrl+Shift+2" }
         );
-        assert_eq!(label("Control+Alt+KeyS"), if mac { "Ctrl+Option+S" } else { "Ctrl+Alt+S" });
+        assert_eq!(
+            label("Control+Alt+KeyS"),
+            if mac { "Ctrl+Option+S" } else { "Ctrl+Alt+S" }
+        );
         assert_eq!(label(""), "");
     }
 }
