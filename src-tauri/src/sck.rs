@@ -64,8 +64,9 @@ pub fn capture_display(display_id: u32, w: u32, h: u32) -> Result<RgbaImage, Str
 
 fn find_display(display_id: u32) -> Result<Retained<SCDisplay>, String> {
     let (tx, rx) = mpsc::channel::<Result<Retained<SCDisplay>, String>>();
-    let handler = RcBlock::new(move |content: *mut SCShareableContent, error: *mut NSError| {
-        let result = match unsafe { content.as_ref() } {
+    let handler = RcBlock::new(
+        move |content: *mut SCShareableContent, error: *mut NSError| {
+            let result = match unsafe { content.as_ref() } {
             Some(c) => {
                 let displays = unsafe { c.displays() };
                 displays
@@ -79,8 +80,9 @@ fn find_display(display_id: u32) -> Result<Retained<SCDisplay>, String> {
                 "macOS didn't allow the capture; turn on DeskShot in System Settings › Privacy & Security › Screen Recording",
             )),
         };
-        let _ = tx.send(result);
-    });
+            let _ = tx.send(result);
+        },
+    );
     unsafe { SCShareableContent::getShareableContentWithCompletionHandler(&*handler) };
     rx.recv_timeout(WAIT)
         .map_err(|_| "macOS didn't list the screens in time".to_string())?
