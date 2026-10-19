@@ -9,6 +9,7 @@ mod clipboard;
 mod desklab;
 mod history;
 mod keys;
+mod notice;
 mod pin;
 mod printscreen;
 #[cfg(target_os = "macos")]
