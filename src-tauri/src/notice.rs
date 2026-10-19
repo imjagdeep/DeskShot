@@ -29,7 +29,12 @@ pub fn captured(app: &AppHandle, data: &Path, entry: &history::Entry, body: &str
 }
 
 #[cfg(windows)]
-fn windows_toast(app: &AppHandle, data: &Path, entry: &history::Entry, body: &str) -> Result<(), String> {
+fn windows_toast(
+    app: &AppHandle,
+    data: &Path,
+    entry: &history::Entry,
+    body: &str,
+) -> Result<(), String> {
     use tauri::Emitter;
     use tauri_winrt_notification::Toast;
 
@@ -86,7 +91,8 @@ fn thumbnail(data: &Path, id: &str) -> Result<std::path::PathBuf, String> {
     std::fs::create_dir_all(&dir).map_err(|e| format!("cannot make {}: {e}", dir.display()))?;
     let out = dir.join(format!("{id}.png"));
     let small = img.thumbnail(THUMB, THUMB).to_rgba8();
-    std::fs::write(&out, history::encode_png(&small)?).map_err(|e| format!("cannot write {}: {e}", out.display()))?;
+    std::fs::write(&out, history::encode_png(&small)?)
+        .map_err(|e| format!("cannot write {}: {e}", out.display()))?;
     prune(&dir, KEEP);
     Ok(out)
 }
@@ -94,7 +100,9 @@ fn thumbnail(data: &Path, id: &str) -> Result<std::path::PathBuf, String> {
 /// Keep only the newest `keep` pictures.
 #[cfg(windows)]
 fn prune(dir: &Path, keep: usize) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = rd
         .filter_map(|e| e.ok())
         .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
@@ -102,7 +110,10 @@ fn prune(dir: &Path, keep: usize) {
     files.sort_by(|a, b| b.0.cmp(&a.0));
     for (_, p) in files.into_iter().skip(keep) {
         if let Err(e) = std::fs::remove_file(&p) {
-            tracing::warn!("could not remove old notification picture {}: {e}", p.display());
+            tracing::warn!(
+                "could not remove old notification picture {}: {e}",
+                p.display()
+            );
         }
     }
 }
@@ -119,7 +130,12 @@ mod tests {
             std::fs::write(&p, b"x").unwrap();
             // Distinct, increasing times so "newest" is well defined.
             let t = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_000 + i);
-            std::fs::File::options().write(true).open(&p).unwrap().set_modified(t).unwrap();
+            std::fs::File::options()
+                .write(true)
+                .open(&p)
+                .unwrap()
+                .set_modified(t)
+                .unwrap();
         }
         prune(dir.path(), 2);
         let mut left: Vec<String> = std::fs::read_dir(dir.path())
