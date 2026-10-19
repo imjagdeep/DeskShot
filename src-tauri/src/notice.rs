@@ -3,12 +3,14 @@
 //! edit or pin it. On other systems (and if this fails) a plain notification.
 
 use crate::history;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tauri::AppHandle;
 
 /// Notification pictures are kept this small: Windows won't show big ones.
+#[cfg(windows)]
 const THUMB: u32 = 728;
 /// Pictures kept for notifications that may still be in the notification centre.
+#[cfg(windows)]
 const KEEP: usize = 20;
 
 pub fn captured(app: &AppHandle, data: &Path, entry: &history::Entry, body: &str) {
@@ -76,7 +78,8 @@ fn windows_toast(app: &AppHandle, data: &Path, entry: &history::Entry, body: &st
 }
 
 /// A small PNG of the capture for the notification, next to the history.
-fn thumbnail(data: &Path, id: &str) -> Result<PathBuf, String> {
+#[cfg(windows)]
+fn thumbnail(data: &Path, id: &str) -> Result<std::path::PathBuf, String> {
     let src = history::png_path(data, id)?;
     let img = image::open(&src).map_err(|e| format!("cannot read the capture: {e}"))?;
     let dir = data.join("notice");
@@ -89,9 +92,10 @@ fn thumbnail(data: &Path, id: &str) -> Result<PathBuf, String> {
 }
 
 /// Keep only the newest `keep` pictures.
+#[cfg(windows)]
 fn prune(dir: &Path, keep: usize) {
     let Ok(rd) = std::fs::read_dir(dir) else { return };
-    let mut files: Vec<(std::time::SystemTime, PathBuf)> = rd
+    let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = rd
         .filter_map(|e| e.ok())
         .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
         .collect();
@@ -103,7 +107,7 @@ fn prune(dir: &Path, keep: usize) {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, windows))]
 mod tests {
     use super::*;
 
