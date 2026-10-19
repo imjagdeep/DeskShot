@@ -369,15 +369,13 @@ pub fn keep(
     // Quick captures (shortcut, tray) get the card, the window or a note.
     let from_window = std::mem::take(&mut app.state::<AppState>().lock().main_was_open);
     let note = || {
-        crate::notify(
-            app,
-            "Captured",
-            if settings.copy_to_clipboard {
-                "Copied to the clipboard."
-            } else {
-                "Saved."
-            },
-        )
+        let data = app.state::<AppState>().lock().data_dir.clone();
+        let body = if settings.copy_to_clipboard {
+            "Copied to the clipboard."
+        } else {
+            "Saved."
+        };
+        crate::notice::captured(app, &data, &entry, body)
     };
     if from_window || settings.after_capture == AfterCapture::Window {
         crate::tray::show_main(app);

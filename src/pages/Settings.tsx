@@ -104,7 +104,7 @@ export function SettingsPage() {
                 [
                   ["card", "Small card"],
                   ["window", "Open DeskShot"],
-                  ["notify", "Just a note"],
+                  ["notify", "Notification"],
                 ] as const
               ).map(([v, label]) => (
                 <button key={v} className={s.after_capture === v ? "active" : ""} aria-pressed={s.after_capture === v} onClick={() => void save({ after_capture: v })}>

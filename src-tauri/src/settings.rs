@@ -18,7 +18,7 @@ pub enum AfterCapture {
     Card,
     /// Open the DeskShot window with the capture.
     Window,
-    /// Only a notification.
+    /// A notification with the capture in it (Windows: click to edit, Edit and Pin buttons).
     Notify,
 }
 

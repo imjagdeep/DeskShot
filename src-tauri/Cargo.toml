@@ -51,6 +51,9 @@ block2 = "0.6"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+# The capture notification with its picture and buttons (notice.rs); the
+# notification plugin already uses this crate, it just doesn't offer those.
+tauri-winrt-notification = "0.8"
 
 [dev-dependencies]
 tempfile = "3"
