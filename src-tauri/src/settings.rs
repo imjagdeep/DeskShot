@@ -14,7 +14,7 @@ pub enum Format {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AfterCapture {
-    /// A small card in the screen corner (Copy, Save, Edit, Pin).
+    /// A slim strip in the screen corner (thumbnail; Edit, Save, Pin on hover).
     Card,
     /// Open the DeskShot window with the capture.
     Window,
