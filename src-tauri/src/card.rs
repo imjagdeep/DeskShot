@@ -1,34 +1,29 @@
 //! The quick-capture card: after a capture from the shortcut or the tray, a
-//! small window in the screen corner with the picture and Copy, Save, Edit,
-//! Pin and close. It doesn't take the focus, and closes itself after a few
-//! seconds unless the pointer is on it. One card at a time.
+//! slim strip in the screen corner (thumbnail, "Copied", and Edit, Save, Pin
+//! and close on hover), like the Snipping Tool's toast. It doesn't take the
+//! focus, and closes itself after a few seconds unless the pointer is on it.
+//! One card at a time.
 
 use crate::history;
 use crate::state::AppState;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
 
 pub const LABEL: &str = "card";
-/// Card size in screen points (the picture gets the top part).
-const WIDTH: f64 = 300.0;
-const BAR: f64 = 46.0;
+/// Card size in screen points: one slim strip, whatever the capture's shape
+/// (the thumbnail is fitted inside it).
+const WIDTH: f64 = 360.0;
+const HEIGHT: f64 = 72.0;
 const MARGIN: f64 = 16.0;
 
 pub fn is_card(label: &str) -> bool {
     label == LABEL
 }
 
-/// Height of the picture area for a capture: its shape at the card's width,
-/// kept between a strip and a square-ish box.
-pub fn picture_height(width: u32, height: u32) -> f64 {
-    let h = WIDTH * height as f64 / width.max(1) as f64;
-    h.clamp(70.0, 240.0)
-}
-
 /// Show (or update) the card for a capture, bottom right of the screen the
 /// pointer is on.
 pub fn show(app: &AppHandle, entry: &history::Entry) -> Result<(), String> {
     app.state::<AppState>().lock().card = Some(entry.id.clone());
-    let h = picture_height(entry.width, entry.height) + BAR;
+    let h = HEIGHT;
     let monitor = app
         .cursor_position()
         .ok()
@@ -100,10 +95,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn card_pictures_keep_a_sensible_height() {
-        assert_eq!(picture_height(1600, 900), 168.75);
-        assert_eq!(picture_height(3840, 200), 70.0);
-        assert_eq!(picture_height(400, 1200), 240.0);
-        assert!(is_card("card") && !is_card("main"));
+    fn only_the_card_window_is_the_card() {
+        assert!(is_card("card") && !is_card("main") && !is_card("cards"));
     }
 }
