@@ -4,6 +4,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
 import { api, errorText } from "./lib/api";
+import { MenuGlyph } from "./shell/menuIcons";
 
 export function Pin() {
   const [url, setUrl] = useState<string | null>(null);
@@ -81,9 +82,17 @@ export function Pin() {
       {url && <img src={url} alt="Pinned capture" draggable={false} />}
       {note && <div className="pin-note">{note}</div>}
       {menu && (
-        <div className="pin-menu" style={{ left: Math.min(menu.x, window.innerWidth - 150), top: Math.min(menu.y, window.innerHeight - 80) }} onMouseDown={(e) => e.stopPropagation()}>
-          <button onClick={() => void copy()}>Copy</button>
-          <button onClick={() => void win.close()}>Close</button>
+        <div className="menu-pop ctx-menu pin-menu" role="menu" style={{ left: Math.max(4, Math.min(menu.x, window.innerWidth - 164)), top: Math.max(4, Math.min(menu.y, window.innerHeight - 84)) }} onMouseDown={(e) => e.stopPropagation()}>
+          <button className="menu-row" role="menuitem" onClick={() => void copy()}>
+            <span className="menu-check"><MenuGlyph name="copy" /></span>
+            <span className="menu-label">Copy</span>
+            <span />
+          </button>
+          <button className="menu-row" role="menuitem" onClick={() => void win.close()}>
+            <span className="menu-check"><MenuGlyph name="close" /></span>
+            <span className="menu-label">Close</span>
+            <span />
+          </button>
         </div>
       )}
     </div>
